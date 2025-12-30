@@ -1,0 +1,1 @@
+# Talent module initialization

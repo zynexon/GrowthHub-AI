@@ -1,0 +1,7 @@
+# Sample test customers CSV
+email,company,plan,mrr,last_active
+customer1@company1.com,Company One,pro,499.00,2025-12-20
+customer2@company2.com,Company Two,enterprise,2999.00,2025-12-25
+customer3@company3.com,Company Three,pro,499.00,2025-11-15
+customer4@company4.com,Company Four,free,0.00,2025-12-24
+customer5@company5.com,Company Five,pro,499.00,2025-12-23

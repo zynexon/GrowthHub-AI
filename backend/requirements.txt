@@ -1,0 +1,12 @@
+# Flask Core
+Flask==3.0.0
+flask-cors==4.0.0
+python-dotenv==1.0.0
+
+# Supabase
+supabase==2.3.0
+
+# Utilities
+python-dateutil==2.8.2
+pytz==2023.3
+requests==2.31.0

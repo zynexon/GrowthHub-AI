@@ -1,0 +1,10 @@
+# Sample test leads CSV
+email,name,company,source,phone,status
+john.doe@acme.com,John Doe,Acme Corporation,website,+1-555-0100,new
+jane.smith@techcorp.com,Jane Smith,TechCorp Industries,referral,+1-555-0101,new
+bob.wilson@startup.io,Bob Wilson,Startup Inc,ad,+1-555-0102,new
+alice.brown@enterprise.com,Alice Brown,Enterprise Solutions,event,,new
+charlie.davis@saas.com,Charlie Davis,SaaS Company,content,+1-555-0103,new
+diana.moore@digital.com,Diana Moore,Digital Agency,website,,new
+evan.taylor@consulting.com,Evan Taylor,Consulting Group,referral,+1-555-0104,new
+fiona.white@retail.com,Fiona White,Retail Chain,ad,,new
