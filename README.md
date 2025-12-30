@@ -1,65 +1,73 @@
-# GrowthHub AI - SaaS Platform
+# GrowthHub AI - Business Operations Platform
 
-GrowthHub AI is a revenue operations and talent execution platform that combines revenue intelligence with verified execution through validated talent.
+A comprehensive platform for managing revenue operations, customer health, team performance, and business workflows.
 
 ## Tech Stack
 
 ### Frontend
 - React 18 + Vite
 - Tailwind CSS
-- React Query
+- TanStack React Query
 - Zustand (State Management)
-- React Hook Form + Zod
+- React Router
 
 ### Backend
 - Python 3.11+ with Flask
-- Supabase (PostgreSQL + Auth + Storage)
-- Celery + Redis (Background Jobs)
-- OpenAI & Google Gemini APIs
+- Supabase (PostgreSQL + Auth + RLS)
+- OpenAI API (Lead scoring)
 
 ### Infrastructure
 - Docker & Docker Compose
-- Hostinger VPS/Cloud
+- Local development environment
 
 ## Project Structure
 
 ```
 growthhub-ai/
-├── backend/          # Flask API
-├── frontend/         # React + Vite
-├── docker-compose.yml
-└── README.md
+├── backend/
+│   ├── app/
+│   │   ├── auth/              # JWT authentication
+│   │   ├── modules/
+│   │   │   ├── revops/        # Lead scoring & management
+│   │   │   ├── customers/     # Customer health monitoring
+│   │   │   ├── data_labeling/ # Data annotation platform
+│   │   │   ├── talent/        # Team management
+│   │   │   └── jobs/          # Task tracking
+│   │   └── ai/                # AI scoring engines
+│   └── requirements.txt
+├── frontend/
+│   └── src/
+│       ├── components/
+│       ├── pages/             # Feature modules
+│       ├── services/          # API clients
+│       └── store/             # Zustand stores
+├── database/
+│   └── schema.sql             # Database schema
+└── docker-compose.yml
 ```
 
 ## Quick Start
 
 ### Prerequisites
-- Docker & Docker Compose
-- Node.js 18+ (for local frontend dev)
-- Python 3.11+ (for local backend dev)
+- Node.js 18+
+- Python 3.11+
+- Supabase account
 
 ### Environment Setup
 
-1. Copy environment files:
-```bash
-cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env
+1. Create `.env` file in backend directory:
+```env
+SUPABASE_URL=your_supabase_url
+SUPABASE_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_KEY=your_supabase_service_key
+JWT_SECRET=your_jwt_secret
+OPENAI_API_KEY=your_openai_key
 ```
 
-2. Update `.env` files with your credentials:
-   - Supabase project URL and keys
-   - OpenAI API key
-   - Google Gemini API key
-
-### Run with Docker
-
-```bash
-docker-compose up -d
+2. Create `.env` file in frontend directory:
+```env
+VITE_API_URL=http://localhost:5000
 ```
-
-- Frontend: http://localhost:5173
-- Backend API: http://localhost:5000
-- Redis: localhost:6379
 
 ### Local Development
 
@@ -67,10 +75,12 @@ docker-compose up -d
 ```bash
 cd backend
 python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+venv\Scripts\activate
 pip install -r requirements.txt
-flask run
+python run.py
 ```
+
+Backend runs on: http://localhost:5000
 
 #### Frontend
 ```bash
@@ -79,38 +89,125 @@ npm install
 npm run dev
 ```
 
+Frontend runs on: http://localhost:5173
+
 ## Features
 
-### MVP Modules
+### Implemented Modules
 
-1. **RevOps Core** - Lead scoring, ROI attribution, automated alerts
-2. **Customer Health** - Churn prediction, health scoring, expansion recommendations
-3. **Market Intelligence** - Competitor tracking, sentiment analysis, market alerts
-4. **Data Labeling** - Dataset management, annotation workflows, quality control
-5. **Talent Validation** - Skill scoring, task-based validation, performance tracking
-6. **Job Matching** - AI-assisted matching, manual approval, execution tracking
-7. **Service Workers** - Onboarding, training validation, job execution
+1. **RevOps / Lead Management**
+   - CSV lead upload
+   - Automatic lead scoring
+   - Lead prioritization
+   - Status tracking (New, Contacted, Qualified, Lost, Won)
 
-## User Roles
+2. **Customer Health Monitoring**
+   - Customer health scores
+   - Churn risk prediction
+   - Health status tracking
+   - At-risk customer alerts
 
-- **Platform Admin** - Full system access, billing, organization management
-- **Organization Owner** - Full access to their organization's data, billing
-- **Organization Member** - Access to RevOps, Customer Health, Market Intel
-- **Talent** - Access to data labeling tasks, job execution
+3. **Campaign & ROI Tracking**
+   - Marketing campaign management
+   - ROI calculation
+   - Campaign deduplication
+   - Performance analytics
 
-## Development Roadmap
+4. **Data Labeling Platform**
+   - Dataset upload and management
+   - Data annotation workflows
+   - Label categories and quality control
+   - Export labeled datasets
 
-- [x] Project setup and architecture
-- [ ] Multi-tenant authentication
-- [ ] RevOps lead scoring module
-- [ ] Data labeling platform
-- [ ] Talent validation system
-- [ ] Job matching & execution
-- [ ] Customer health & churn prediction
-- [ ] Market intelligence
-- [ ] Service workers extension
-- [ ] Billing integration (Stripe)
-- [ ] Deployment & CI/CD
+5. **Talent Management**
+   - Team member profiles
+   - Skills and expertise tracking
+   - Performance metrics (tasks assigned/completed/pending)
+   - Availability management
+
+6. **Job Management**
+   - Simple task tracker for company work
+   - Create and assign jobs
+   - Status tracking (Open, In Progress, Completed)
+   - Automatic performance counter updates
+   - Due date management
+
+## Authentication
+
+- Company/Organization login with JWT authentication
+- Access to all platform modules and features
+
+## UI Features
+
+- Dark theme with purple gradient design system
+- Responsive layout with sidebar navigation
+- Real-time statistics dashboard
+- Premium animations and transitions
+- Interactive feature modals
+- Mobile-responsive design
+
+## Database Schema
+
+All tables use Supabase Row Level Security (RLS) policies:
+- `users` - User accounts with organization linking
+- `leads` - RevOps lead data
+- `customers` - Customer health records
+- `campaigns` - Marketing campaign data
+- `datasets` - Data labeling projects
+- `data_labels` - Individual label annotations
+- `talent` - Team member profiles
+- `jobs` - Task tracking with talent assignments
+
+## API Endpoints
+
+### Authentication
+- `POST /api/auth/signup` - User registration
+- `POST /api/auth/login` - User login
+
+### RevOps
+- `GET /api/revops/leads` - List leads
+- `POST /api/revops/leads/upload` - CSV upload
+- `PATCH /api/revops/leads/{id}` - Update lead
+
+### Customers
+- `GET /api/customers` - List customers
+- `POST /api/customers` - Create customer
+
+### Data Labeling
+- `GET /api/data-labeling/datasets` - List datasets
+- `POST /api/data-labeling/datasets` - Create dataset
+- `GET /api/data-labeling/labels` - Get labels
+
+### Talent
+- `GET /api/talent` - List team members
+- `POST /api/talent` - Add team member
+
+### Jobs
+- `GET /api/jobs` - List jobs
+- `POST /api/jobs` - Create job
+- `PATCH /api/jobs/{id}` - Update job
+- `POST /api/jobs/{id}/complete` - Mark complete
+
+## Development Status
+
+✅ **Completed**
+- Multi-tenant authentication with JWT
+- RevOps lead scoring and management
+- Customer health monitoring
+- Campaign & ROI tracking
+- Data labeling platform
+- Talent management with performance tracking
+- Jobs/task tracking with talent integration
+- Comprehensive dashboard with statistics
+- Premium UI with dark theme
+
+🚧 **Future Enhancements**
+- Email notifications
+- Advanced analytics and reporting
+- Mobile app
+- Billing integration
+- API rate limiting
+- Deployment automation
 
 ## License
 
