@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 export default function LandingPage() {
   const [scrollY, setScrollY] = useState(0)
   const [isVisible, setIsVisible] = useState({})
+  const [selectedFeature, setSelectedFeature] = useState(null)
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY)
@@ -33,33 +34,39 @@ export default function LandingPage() {
   const features = [
     {
       icon: '🎯',
-      title: 'AI-Powered Lead Scoring',
-      description: 'Automatically score and prioritize leads using GPT-4 and Gemini AI models'
+      title: 'Lead Scoring',
+      description: 'Automatically score and prioritize leads to focus on high-value opportunities',
+      details: 'Upload your leads via CSV and our platform automatically scores each lead based on multiple factors including engagement, company size, and behavior patterns. Get instant insights on which leads to prioritize, reducing time spent on cold prospects and maximizing conversion rates.'
     },
     {
       icon: '❤️',
       title: 'Customer Health Monitoring',
-      description: 'Predict churn and identify at-risk customers before it\'s too late'
+      description: 'Predict churn and identify at-risk customers before it\'s too late',
+      details: 'Monitor customer health scores in real-time with predictive analytics. Track engagement metrics, usage patterns, and satisfaction indicators. Receive alerts for at-risk customers and identify expansion opportunities before your competitors do.'
     },
     {
-      icon: '🌐',
-      title: 'Market Intelligence',
-      description: 'Track competitors and market trends with real-time insights'
+      icon: '📈',
+      title: 'Campaign & ROI Tracking',
+      description: 'Track marketing campaigns, measure ROI, and optimize spend',
+      details: 'Manage all your marketing campaigns in one place. Track performance metrics, calculate ROI, and identify which channels drive the most revenue. Deduplicate campaigns automatically and get actionable insights to optimize your marketing budget.'
     },
     {
       icon: '🏷️',
       title: 'Data Labeling Platform',
-      description: 'Create high-quality training datasets with distributed workforce'
+      description: 'Create high-quality training datasets with distributed workforce',
+      details: 'Upload your datasets and label them efficiently with our intuitive interface. Perfect for creating training data for AI models. Track progress, export labeled data, and collaborate with your team to ensure high-quality annotations.'
     },
     {
       icon: '👥',
       title: 'Talent Marketplace',
-      description: 'AI-powered matching between companies and top-tier professionals'
+      description: 'Manage your team, track performance, and assign work efficiently',
+      details: 'Build your talent registry with skill-based profiles. Track team member performance with task completion metrics. Assign work, monitor availability, and manage your distributed workforce all in one platform.'
     },
     {
       icon: '💼',
       title: 'Job Management',
-      description: 'Post jobs, track applications, and hire faster with intelligent automation'
+      description: 'Post jobs, track applications, and hire faster with intelligent automation',
+      details: 'Simple task tracker for company work. Create jobs, assign team members, set due dates, and track progress from open to completed. Get insights on job completion rates and team productivity with built-in analytics.'
     }
   ]
 
@@ -127,10 +134,6 @@ export default function LandingPage() {
         </div>
 
         <div className="max-w-7xl mx-auto text-center relative z-10 w-full">
-          <div className="inline-block mb-6 px-4 py-2 bg-purple-500/10 border border-purple-500/30 rounded-full animate-float">
-            <span className="text-purple-300 text-sm font-medium">🚀 Powered by GPT-4 & Gemini AI</span>
-          </div>
-          
           <h1 className="text-6xl md:text-7xl font-bold text-white mb-6 leading-tight animate-fade-in-up">
             Revenue Intelligence
             <br />
@@ -184,13 +187,23 @@ export default function LandingPage() {
       </section>
 
       {/* Features Grid */}
-      <section className="py-20 px-6 bg-gray-900/50 relative">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16" id="features" data-animate>
-            <h2 className={`text-4xl md:text-5xl font-bold text-white mb-4 transition-all duration-1000 ${isVisible.features ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-              One Platform, Unlimited Possibilities
+      <section className="py-24 px-6 relative overflow-hidden">
+        {/* Background effects */}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-purple-900/5 to-transparent pointer-events-none"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-purple-500/5 rounded-full blur-3xl pointer-events-none"></div>
+        
+        <div className="max-w-7xl mx-auto relative z-10">
+          <div className="text-center mb-20" id="features" data-animate>
+            <div className="inline-block mb-4 px-4 py-2 bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20 rounded-full">
+              <span className="text-purple-300 text-sm font-semibold">✨ POWERFUL FEATURES</span>
+            </div>
+            <h2 className={`text-5xl md:text-6xl font-bold text-white mb-6 transition-all duration-1000 ${isVisible.features ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+              One Platform,{' '}
+              <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 text-transparent bg-clip-text">
+                Unlimited Possibilities
+              </span>
             </h2>
-            <p className={`text-xl text-gray-400 transition-all duration-1000 delay-200 ${isVisible.features ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+            <p className={`text-xl text-gray-400 max-w-2xl mx-auto transition-all duration-1000 delay-200 ${isVisible.features ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
               Everything you need to scale revenue and talent operations
             </p>
           </div>
@@ -201,28 +214,68 @@ export default function LandingPage() {
                 key={index}
                 data-animate
                 id={`feature-${index}`}
-                className={`group p-8 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-lg rounded-2xl border border-purple-500/20 hover:border-purple-500/50 transition-all duration-500 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20 cursor-pointer ${
+                className={`group relative p-8 bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl rounded-3xl border border-gray-700/50 hover:border-purple-500/50 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-purple-500/20 cursor-pointer overflow-hidden ${
                   isVisible[`feature-${index}`] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
                 }`}
                 style={{ transitionDelay: `${index * 0.1}s` }}
               >
-                <div className="text-5xl mb-4 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
-                  {feature.icon}
+                {/* Gradient overlay on hover */}
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-600/0 via-pink-600/0 to-blue-600/0 group-hover:from-purple-600/5 group-hover:via-pink-600/5 group-hover:to-blue-600/5 transition-all duration-500 rounded-3xl"></div>
+                
+                {/* Animated border gradient */}
+                <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 rounded-3xl blur-xl opacity-30"></div>
                 </div>
-                <h3 className="text-xl font-bold text-white mb-3 group-hover:text-purple-300 transition-colors">
-                  {feature.title}
-                </h3>
-                <p className="text-gray-400 leading-relaxed group-hover:text-gray-300 transition-colors">
-                  {feature.description}
-                </p>
-                <div className="mt-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <span className="text-purple-400 text-sm font-medium inline-flex items-center gap-1">
-                    Learn more 
-                    <span className="group-hover:translate-x-1 transition-transform">→</span>
-                  </span>
+
+                <div className="relative z-10">
+                  {/* Icon with background glow */}
+                  <div className="relative inline-block mb-6">
+                    <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-blue-500/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
+                    <div className="relative text-6xl group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 filter drop-shadow-2xl">
+                      {feature.icon}
+                    </div>
+                  </div>
+
+                  <h3 className="text-2xl font-bold text-white mb-4 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-purple-300 group-hover:to-blue-300 transition-all duration-300">
+                    {feature.title}
+                  </h3>
+                  
+                  <p className="text-gray-400 leading-relaxed mb-6 group-hover:text-gray-300 transition-colors">
+                    {feature.description}
+                  </p>
+
+                  {/* Learn more link */}
+                  <button 
+                    onClick={() => setSelectedFeature(feature)}
+                    className="flex items-center gap-2 text-purple-400 font-medium opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 cursor-pointer hover:text-purple-300"
+                  >
+                    <span className="text-sm">Learn more</span>
+                    <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
                 </div>
+
+                {/* Animated corner accent */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-500/10 to-transparent rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               </div>
             ))}
+          </div>
+
+          {/* Bottom CTA */}
+          <div className="text-center mt-16" data-animate id="features-cta">
+            <div className={`transition-all duration-1000 ${isVisible['features-cta'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+              <p className="text-gray-400 mb-6">Ready to transform your operations?</p>
+              <Link 
+                to="/signup" 
+                className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-105"
+              >
+                Get Started Free
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+              </Link>
+            </div>
           </div>
         </div>
       </section>
@@ -260,10 +313,10 @@ export default function LandingPage() {
                 2
               </div>
               <h3 className={`text-2xl font-bold text-white mb-4 transition-all duration-1000 delay-400 ${isVisible['step-2'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-                AI Does the Work
+                Automate Your Workflow
               </h3>
               <p className={`text-gray-400 transition-all duration-1000 delay-500 ${isVisible['step-2'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-                Our AI automatically scores leads, predicts churn, and matches top talent
+                Smart automation scores leads, tracks customer health, and manages your team
               </p>
             </div>
 
@@ -321,6 +374,73 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* Feature Modal */}
+      {selectedFeature && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => setSelectedFeature(null)}
+        >
+          <div 
+            className="relative bg-gradient-to-br from-gray-900 via-[#2d1b4e]/50 to-gray-900 border border-purple-500/30 rounded-2xl max-w-2xl w-full p-8 shadow-2xl animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close button */}
+            <button
+              onClick={() => setSelectedFeature(null)}
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-800/50 hover:bg-gray-800 text-gray-400 hover:text-white transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Icon */}
+            <div className="mb-6">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500/20 to-blue-500/20 border border-purple-500/30 flex items-center justify-center text-4xl shadow-lg shadow-purple-500/20">
+                {selectedFeature.icon}
+              </div>
+            </div>
+
+            {/* Title */}
+            <h3 className="text-3xl font-bold text-white mb-4">
+              {selectedFeature.title}
+            </h3>
+
+            {/* Short description */}
+            <p className="text-gray-400 text-lg mb-6">
+              {selectedFeature.description}
+            </p>
+
+            {/* Divider */}
+            <div className="w-full h-px bg-gradient-to-r from-transparent via-purple-500/30 to-transparent mb-6"></div>
+
+            {/* Detailed description */}
+            <div className="space-y-4">
+              <h4 className="text-sm font-semibold text-purple-400 uppercase tracking-wider">How it works</h4>
+              <p className="text-gray-300 leading-relaxed">
+                {selectedFeature.details}
+              </p>
+            </div>
+
+            {/* CTA Button */}
+            <div className="mt-8 flex gap-4">
+              <Link
+                to="/signup"
+                className="flex-1 py-3 px-6 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold rounded-lg transition-all duration-300 text-center shadow-lg shadow-purple-500/30"
+              >
+                Get Started
+              </Link>
+              <button
+                onClick={() => setSelectedFeature(null)}
+                className="px-6 py-3 border border-gray-700 hover:border-purple-500/50 text-gray-300 hover:text-white rounded-lg transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <footer className="py-12 px-6 border-t border-purple-500/20">
