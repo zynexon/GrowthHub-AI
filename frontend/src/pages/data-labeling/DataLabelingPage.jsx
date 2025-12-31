@@ -7,6 +7,7 @@ export default function DataLabelingPage() {
   const [selectedDataset, setSelectedDataset] = useState(null)
   const [uploadForm, setUploadForm] = useState({ name: '', labelType: 'intent', file: null })
   const [isLabelTypeOpen, setIsLabelTypeOpen] = useState(false)
+  const [showFormatInfo, setShowFormatInfo] = useState(false)
   const labelTypeRef = useRef(null)
   const queryClient = useQueryClient()
 
@@ -163,12 +164,23 @@ export default function DataLabelingPage() {
         </div>
 
         {view === 'list' && (
-          <button
-            onClick={() => setView('upload')}
-            className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg shadow-purple-500/50 hover:scale-105"
-          >
-            ⬆️ Upload Dataset
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowFormatInfo(true)}
+              className="flex items-center gap-2 px-4 py-3 bg-gray-800/50 text-gray-300 rounded-lg font-medium hover:bg-gray-700/50 hover:text-white transition-all border border-gray-700 hover:border-gray-600"
+              title="CSV Format Info"
+            >
+              <span className="text-xl">ℹ️</span>
+              <span>Format</span>
+            </button>
+            
+            <button
+              onClick={() => setView('upload')}
+              className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg shadow-purple-500/50 hover:scale-105"
+            >
+              ⬆️ Upload Dataset
+            </button>
+          </div>
         )}
 
         {view !== 'list' && (
@@ -280,32 +292,6 @@ export default function DataLabelingPage() {
                   onChange={(e) => setUploadForm({ ...uploadForm, file: e.target.files[0] })}
                   className="w-full px-5 py-4 bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-gray-700 rounded-xl text-white text-lg file:mr-4 file:py-2.5 file:px-5 file:rounded-lg file:border-0 file:bg-gradient-to-r file:from-purple-600 file:to-blue-600 file:text-white file:font-bold file:cursor-pointer file:hover:from-purple-700 file:hover:to-blue-700 file:transition-all file:shadow-lg file:shadow-purple-500/30 hover:border-gray-600 transition-all"
                 />
-              </div>
-              <div className="bg-gradient-to-br from-purple-900/40 via-blue-900/30 to-purple-900/40 border-2 border-purple-500/40 rounded-xl p-5 mt-4 shadow-lg hover:border-purple-500/60 transition-all">
-                <div className="flex items-start gap-3 mb-3">
-                  <span className="text-2xl mt-0.5 animate-pulse">💡</span>
-                  <div className="flex-1">
-                    <p className="text-sm font-bold text-purple-200 mb-2 flex items-center gap-2">
-                      CSV Format Requirements
-                    </p>
-                    <div className="space-y-2">
-                      <p className="text-sm text-gray-300 flex items-center gap-2">
-                        <span className="text-purple-400">•</span>
-                        Required columns: <code className="font-mono text-purple-400 bg-gray-900/70 px-2.5 py-1 rounded-lg font-semibold border border-purple-500/30">id,text</code>
-                      </p>
-                      <p className="text-xs text-gray-400 pl-4">
-                        <span className="font-semibold text-gray-300">Example row:</span> 
-                        <code className="ml-2 font-mono text-purple-300 bg-gray-900/70 px-2 py-0.5 rounded border border-purple-500/20">1,&quot;Technical support is not responding&quot;</code>
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 text-xs text-purple-300/80 border-t border-purple-500/20 pt-3 mt-2">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span>Each row will be presented for labeling one at a time</span>
-                </div>
               </div>
             </div>
 
@@ -527,6 +513,81 @@ export default function DataLabelingPage() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* CSV Format Info Modal */}
+      {showFormatInfo && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl border border-purple-500/30 max-w-2xl w-full shadow-2xl">
+            <div className="p-6 border-b border-gray-700">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                  <span className="text-3xl">📋</span>
+                  CSV Format
+                </h2>
+                <button
+                  onClick={() => setShowFormatInfo(false)}
+                  className="text-gray-400 hover:text-white transition-colors text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <p className="text-gray-300 mb-4">Your dataset CSV must include:</p>
+              
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-red-400 font-bold">*</span>
+                  <p className="text-sm font-mono text-purple-300 font-semibold">Required columns:</p>
+                </div>
+                <ul className="text-sm text-gray-300 space-y-2 bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                  <li className="flex items-start gap-2">
+                    <span className="text-purple-400">•</span>
+                    <div>
+                      <span className="text-white font-semibold">id</span>
+                      <span className="text-gray-400"> - Unique identifier for each row</span>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-purple-400">•</span>
+                    <div>
+                      <span className="text-white font-semibold">text</span>
+                      <span className="text-gray-400"> - The text content to be labeled</span>
+                    </div>
+                  </li>
+                </ul>
+
+                <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700 mt-4">
+                  <p className="text-sm text-gray-300 mb-2 font-semibold">Example CSV:</p>
+                  <code className="text-xs font-mono text-purple-300 bg-gray-900/70 px-3 py-2 rounded block border border-purple-500/20">
+                    id,text<br />
+                    1,"Technical support is not responding"<br />
+                    2,"How do I reset my password?"<br />
+                    3,"Your product is amazing!"
+                  </code>
+                </div>
+
+                <div className="flex items-start gap-2 text-sm text-blue-300 bg-blue-500/10 rounded-lg p-3 border border-blue-500/30 mt-4">
+                  <svg className="w-5 h-5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>Each row will be presented for labeling one at a time in the labeling interface.</span>
+                </div>
+              </div>
+
+              <div className="mt-6 pt-4 border-t border-gray-700">
+                <button
+                  onClick={() => setShowFormatInfo(false)}
+                  className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-blue-700 transition-all"
+                >
+                  Got it!
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

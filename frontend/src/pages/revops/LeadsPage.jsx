@@ -5,6 +5,7 @@ import { revopsService } from '../../services/revops.service'
 export default function LeadsPage() {
   const [uploadingFile, setUploadingFile] = useState(false)
   const [sortBy, setSortBy] = useState('score')
+  const [showFormatInfo, setShowFormatInfo] = useState(false)
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['leads', sortBy],
@@ -65,17 +66,28 @@ export default function LeadsPage() {
           <p className="text-gray-400">Upload, score, and manage your leads with AI</p>
         </div>
         
-        <label className="group btn-primary cursor-pointer flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg shadow-purple-500/50 hover:scale-105 hover:shadow-purple-500/70">
-          <span className="text-lg">⬆️</span>
-          {uploadingFile ? 'Uploading...' : 'Upload CSV'}
-          <input
-            type="file"
-            accept=".csv"
-            className="hidden"
-            onChange={handleFileUpload}
-            disabled={uploadingFile}
-          />
-        </label>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowFormatInfo(true)}
+            className="flex items-center gap-2 px-4 py-3 bg-gray-800/50 text-gray-300 rounded-lg font-medium hover:bg-gray-700/50 hover:text-white transition-all border border-gray-700 hover:border-gray-600"
+            title="CSV Format Info"
+          >
+            <span className="text-xl">ℹ️</span>
+            <span>Format</span>
+          </button>
+          
+          <label className="group btn-primary cursor-pointer flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg shadow-purple-500/50 hover:scale-105 hover:shadow-purple-500/70">
+            <span className="text-lg">⬆️</span>
+            {uploadingFile ? 'Uploading...' : 'Upload CSV'}
+            <input
+              type="file"
+              accept=".csv"
+              className="hidden"
+              onChange={handleFileUpload}
+              disabled={uploadingFile}
+            />
+          </label>
+        </div>
       </div>
 
       {/* Sort Options */}
@@ -174,29 +186,99 @@ export default function LeadsPage() {
         )}
       </div>
 
-      {/* CSV Format Help */}
-      <div className="bg-gray-800/30 rounded-xl p-6 border border-gray-700">
-        <h3 className="text-lg font-semibold text-white mb-3">📋 CSV Format</h3>
-        <p className="text-gray-400 mb-3">Your leads CSV should include:</p>
-        <div className="grid md:grid-cols-2 gap-4">
-          <div>
-            <p className="text-sm font-mono text-purple-300 mb-2">Required columns:</p>
-            <ul className="text-sm text-gray-400 space-y-1">
-              <li>• <span className="text-white">email</span> - Lead email</li>
-              <li>• <span className="text-white">source</span> - website_form, inbound_referral, paid_ads, cold_list</li>
-            </ul>
-          </div>
-          <div>
-            <p className="text-sm font-mono text-purple-300 mb-2">Optional columns:</p>
-            <ul className="text-sm text-gray-400 space-y-1">
-              <li>• <span className="text-white">name</span> - Lead name</li>
-              <li>• <span className="text-white">company</span> - Company name</li>
-              <li>• <span className="text-white">engagement_level</span> - none, form_filled, email_replied, multiple_visits</li>
-              <li>• <span className="text-white">status</span> - new, contacted, qualified, converted, lost</li>
-            </ul>
+      {/* CSV Format Info Modal */}
+      {showFormatInfo && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl border border-purple-500/30 max-w-2xl w-full shadow-2xl">
+            <div className="p-6 border-b border-gray-700">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                  <span className="text-3xl">📋</span>
+                  CSV Format
+                </h2>
+                <button
+                  onClick={() => setShowFormatInfo(false)}
+                  className="text-gray-400 hover:text-white transition-colors text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <p className="text-gray-300 mb-4">Your leads CSV should include:</p>
+              
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-red-400 font-bold">*</span>
+                    <p className="text-sm font-mono text-purple-300 font-semibold">Required columns:</p>
+                  </div>
+                  <ul className="text-sm text-gray-300 space-y-2 bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                    <li className="flex items-start gap-2">
+                      <span className="text-purple-400">•</span>
+                      <div>
+                        <span className="text-white font-semibold">email</span>
+                        <span className="text-gray-400"> - Lead email</span>
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-purple-400">•</span>
+                      <div>
+                        <span className="text-white font-semibold">source</span>
+                        <span className="text-gray-400"> - website_form, inbound_referral, paid_ads, cold_list</span>
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+                
+                <div className="space-y-3">
+                  <p className="text-sm font-mono text-blue-300 font-semibold">Optional columns:</p>
+                  <ul className="text-sm text-gray-300 space-y-2 bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-400">•</span>
+                      <div>
+                        <span className="text-white font-semibold">name</span>
+                        <span className="text-gray-400"> - Lead name</span>
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-400">•</span>
+                      <div>
+                        <span className="text-white font-semibold">company</span>
+                        <span className="text-gray-400"> - Company name</span>
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-400">•</span>
+                      <div>
+                        <span className="text-white font-semibold">engagement_level</span>
+                        <span className="text-gray-400"> - none, form_filled, email_replied, multiple_visits</span>
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-400">•</span>
+                      <div>
+                        <span className="text-white font-semibold">status</span>
+                        <span className="text-gray-400"> - new, contacted, qualified, converted, lost</span>
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="mt-6 pt-4 border-t border-gray-700">
+                <button
+                  onClick={() => setShowFormatInfo(false)}
+                  className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-blue-700 transition-all"
+                >
+                  Got it!
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

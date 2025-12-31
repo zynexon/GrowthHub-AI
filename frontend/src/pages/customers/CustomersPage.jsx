@@ -5,6 +5,7 @@ import { customerHealthService } from '../../services/customer-health.service'
 export default function CustomersPage() {
   const [filter, setFilter] = useState(null)
   const [uploadingFile, setUploadingFile] = useState(false)
+  const [showFormatInfo, setShowFormatInfo] = useState(false)
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['customers', filter],
@@ -61,17 +62,28 @@ export default function CustomersPage() {
           <p className="text-gray-400">Monitor health scores and churn risk</p>
         </div>
         
-        <label className="group btn-primary cursor-pointer flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg shadow-purple-500/50 hover:scale-105 hover:shadow-purple-500/70">
-          <span className="text-lg">⬆️</span>
-          {uploadingFile ? 'Uploading...' : 'Upload Customers CSV'}
-          <input
-            type="file"
-            accept=".csv"
-            className="hidden"
-            onChange={handleFileUpload}
-            disabled={uploadingFile}
-          />
-        </label>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowFormatInfo(true)}
+            className="flex items-center gap-2 px-4 py-3 bg-gray-800/50 text-gray-300 rounded-lg font-medium hover:bg-gray-700/50 hover:text-white transition-all border border-gray-700 hover:border-gray-600"
+            title="CSV Format Info"
+          >
+            <span className="text-xl">ℹ️</span>
+            <span>Format</span>
+          </button>
+          
+          <label className="group btn-primary cursor-pointer flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg shadow-purple-500/50 hover:scale-105 hover:shadow-purple-500/70">
+            <span className="text-lg">⬆️</span>
+            {uploadingFile ? 'Uploading...' : 'Upload CSV'}
+            <input
+              type="file"
+              accept=".csv"
+              className="hidden"
+              onChange={handleFileUpload}
+              disabled={uploadingFile}
+            />
+          </label>
+        </div>
       </div>
 
       {/* Filter Tabs */}
@@ -206,57 +218,113 @@ export default function CustomersPage() {
         </div>
       )}
 
-      {/* CSV Format Help */}
-      <div className="bg-gradient-to-br from-gray-800/40 to-gray-900/40 backdrop-blur-sm rounded-2xl p-6 border border-purple-500/20 hover:border-purple-500/30 transition-all shadow-lg">
-        <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-          <span className="text-2xl">📋</span> CSV Format
-        </h3>
-        <p className="text-gray-400 mb-4">Your customers CSV should include:</p>
-        <div className="grid md:grid-cols-2 gap-6">
-          <div className="bg-gray-800/30 rounded-xl p-4 border border-gray-700/50">
-            <p className="text-sm font-mono text-purple-400 mb-3 font-semibold">✓ Required columns:</p>
-            <ul className="text-sm text-gray-400 space-y-2">
-              <li className="flex items-start gap-2">
-                <span className="text-purple-400 mt-0.5">•</span>
-                <div><span className="text-white font-semibold">company</span> - Company name</div>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-purple-400 mt-0.5">•</span>
-                <div><span className="text-white font-semibold">email</span> - Contact email</div>
-              </li>
-            </ul>
-          </div>
-          <div className="bg-gray-800/30 rounded-xl p-4 border border-gray-700/50">
-            <p className="text-sm font-mono text-blue-400 mb-3 font-semibold">○ Optional columns:</p>
-            <ul className="text-sm text-gray-400 space-y-2">
-              <li className="flex items-start gap-2">
-                <span className="text-blue-400 mt-0.5">•</span>
-                <div><span className="text-white font-semibold">plan</span> - free, starter, pro, enterprise</div>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-blue-400 mt-0.5">•</span>
-                <div><span className="text-white font-semibold">mrr</span> - Monthly recurring revenue</div>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-blue-400 mt-0.5">•</span>
-                <div><span className="text-white font-semibold">last_active</span> - Last activity date (YYYY-MM-DD)</div>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-blue-400 mt-0.5">•</span>
-                <div><span className="text-white font-semibold">open_issues</span> - Number of open support issues</div>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-blue-400 mt-0.5">•</span>
-                <div><span className="text-white font-semibold">usage_tier</span> - low, medium, high (for expansion)</div>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-blue-400 mt-0.5">•</span>
-                <div><span className="text-white font-semibold">team_count</span> - Number of teams (for cross-sell)</div>
-              </li>
-            </ul>
+      {/* CSV Format Info Modal */}
+      {showFormatInfo && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl border border-purple-500/30 max-w-2xl w-full shadow-2xl">
+            <div className="p-6 border-b border-gray-700">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                  <span className="text-3xl">📋</span>
+                  CSV Format
+                </h2>
+                <button
+                  onClick={() => setShowFormatInfo(false)}
+                  className="text-gray-400 hover:text-white transition-colors text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <p className="text-gray-300 mb-4">Your customers CSV should include:</p>
+              
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-red-400 font-bold">*</span>
+                    <p className="text-sm font-mono text-purple-300 font-semibold">Required columns:</p>
+                  </div>
+                  <ul className="text-sm text-gray-300 space-y-2 bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                    <li className="flex items-start gap-2">
+                      <span className="text-purple-400">•</span>
+                      <div>
+                        <span className="text-white font-semibold">company</span>
+                        <span className="text-gray-400"> - Company name</span>
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-purple-400">•</span>
+                      <div>
+                        <span className="text-white font-semibold">email</span>
+                        <span className="text-gray-400"> - Contact email</span>
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+                
+                <div className="space-y-3">
+                  <p className="text-sm font-mono text-blue-300 font-semibold">Optional columns:</p>
+                  <ul className="text-sm text-gray-300 space-y-2 bg-gray-800/50 rounded-lg p-4 border border-gray-700 max-h-64 overflow-y-auto">
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-400">•</span>
+                      <div>
+                        <span className="text-white font-semibold">plan</span>
+                        <span className="text-gray-400"> - free, starter, pro, enterprise</span>
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-400">•</span>
+                      <div>
+                        <span className="text-white font-semibold">mrr</span>
+                        <span className="text-gray-400"> - Monthly recurring revenue</span>
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-400">•</span>
+                      <div>
+                        <span className="text-white font-semibold">last_active</span>
+                        <span className="text-gray-400"> - Last activity (YYYY-MM-DD)</span>
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-400">•</span>
+                      <div>
+                        <span className="text-white font-semibold">open_issues</span>
+                        <span className="text-gray-400"> - Number of open issues</span>
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-400">•</span>
+                      <div>
+                        <span className="text-white font-semibold">usage_tier</span>
+                        <span className="text-gray-400"> - low, medium, high</span>
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-400">•</span>
+                      <div>
+                        <span className="text-white font-semibold">team_count</span>
+                        <span className="text-gray-400"> - Number of teams</span>
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="mt-6 pt-4 border-t border-gray-700">
+                <button
+                  onClick={() => setShowFormatInfo(false)}
+                  className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-blue-700 transition-all"
+                >
+                  Got it!
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }
