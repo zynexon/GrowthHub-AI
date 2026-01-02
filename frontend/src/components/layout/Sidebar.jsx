@@ -18,7 +18,7 @@ export default function Sidebar() {
   ]
 
   return (
-    <div className="w-64 bg-gray-900 border-r border-purple-500/20 flex flex-col shadow-xl animate-slide-in-right">
+    <div className="w-64 fixed left-0 top-0 h-screen bg-gray-900 border-r border-purple-500/20 flex flex-col shadow-xl animate-slide-in-right overflow-y-auto z-50">
       <div className="p-6 border-b border-purple-500/20">
         <div className="flex items-center gap-3 group cursor-pointer">
           <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-purple-500/50 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">

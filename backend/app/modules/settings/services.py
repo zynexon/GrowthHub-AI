@@ -72,6 +72,8 @@ class SettingsService:
         supabase = get_supabase_admin()
         
         try:
+            print(f"[update_user_profile] User ID: {user_id}, Updates: {updates}")
+            
             # Prepare update payload
             update_payload = {}
             
@@ -81,13 +83,16 @@ class SettingsService:
             
             # Update user metadata (full_name)
             if 'full_name' in updates:
-                update_payload['user_metadata'] = {
-                    'full_name': updates['full_name']
-                }
+                if 'user_metadata' not in update_payload:
+                    update_payload['user_metadata'] = {}
+                update_payload['user_metadata']['full_name'] = updates['full_name']
+            
+            print(f"[update_user_profile] Payload: {update_payload}")
             
             # Use admin API to update user
             if update_payload:
                 response = supabase.auth.admin.update_user_by_id(user_id, update_payload)
+                print(f"[update_user_profile] Response: {response}")
                 if response:
                     user = response.user
                     return {
@@ -98,6 +103,8 @@ class SettingsService:
                     }
         except Exception as e:
             print(f"Error updating user profile: {e}")
+            import traceback
+            traceback.print_exc()
             return None
     
     @staticmethod

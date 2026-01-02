@@ -1,8 +1,10 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { settingsService } from '../../services/settings.service';
 import { apiKeysService } from '../../services/apiKeys.service';
+import { useAuthStore } from '../../store/authStore';
 
 const SettingsPage = () => {
+  const { user, setUser } = useAuthStore();
   const [activeTab, setActiveTab] = useState('organization');
   const [loading, setLoading] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState('');
@@ -117,10 +119,22 @@ const SettingsPage = () => {
     setLoading(true);
     setSaveSuccess('');
     try {
-      await settingsService.updateUserProfile({
+      const updatedProfile = await settingsService.updateUserProfile({
         full_name: userProfile.full_name,
         email: userProfile.email,
       });
+      
+      // Update the auth store with new user data
+      const updatedUser = {
+        ...user,
+        email: updatedProfile.email,
+        user_metadata: {
+          ...user.user_metadata,
+          full_name: updatedProfile.full_name
+        }
+      };
+      setUser(updatedUser);
+      
       setSaveSuccess('Profile updated successfully!');
       setTimeout(() => setSaveSuccess(''), 3000);
     } catch (error) {
@@ -266,7 +280,7 @@ const SettingsPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 p-6">
-      <div className="max-w-6xl mx-auto">
+      <div className="w-full pb-8">
         <div className="mb-8 animate-fade-in">
           <h1 className="text-3xl font-bold text-white mb-2">Settings</h1>
           <p className="text-gray-400">Manage your organization and account preferences</p>
@@ -297,7 +311,7 @@ const SettingsPage = () => {
           </div>
         )}
 
-        <div className="bg-gray-800/30 backdrop-blur-sm rounded-b-xl border border-purple-500/20 p-8 animate-fade-in">
+        <div className="bg-gray-800/30 backdrop-blur-sm rounded-b-xl border border-purple-500/20 p-8 animate-fade-in min-h-[600px]">
           {loading ? (
             <div className="text-center py-12">
               <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
@@ -314,7 +328,7 @@ const SettingsPage = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
                     <div>
                       <label className="block text-sm font-medium text-gray-300 mb-2">Industry</label>
-                      <select value={orgSettings.industry || ''} onChange={(e) => setOrgSettings({ ...orgSettings, industry: e.target.value })} className="w-full px-4 py-3 bg-gray-700/50 border border-purple-500/30 rounded-lg text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all">
+                      <select value={orgSettings.industry || ''} onChange={(e) => setOrgSettings({ ...orgSettings, industry: e.target.value })} className="w-full px-4 py-3 bg-gray-950 border-2 border-purple-500/30 rounded-xl text-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all hover:border-purple-500/50 cursor-pointer shadow-lg shadow-purple-500/10 hover:shadow-purple-500/20">
                         <option value="">Select Industry</option>
                         <option value="technology">Technology</option>
                         <option value="finance">Finance</option>
@@ -329,7 +343,7 @@ const SettingsPage = () => {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-300 mb-2">Company Size</label>
-                      <select value={orgSettings.company_size || ''} onChange={(e) => setOrgSettings({ ...orgSettings, company_size: e.target.value })} className="w-full px-4 py-3 bg-gray-700/50 border border-purple-500/30 rounded-lg text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all">
+                      <select value={orgSettings.company_size || ''} onChange={(e) => setOrgSettings({ ...orgSettings, company_size: e.target.value })} className="w-full px-4 py-3 bg-gray-950 border-2 border-purple-500/30 rounded-xl text-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all hover:border-purple-500/50 cursor-pointer shadow-lg shadow-purple-500/10 hover:shadow-purple-500/20">
                         <option value="">Select Company Size</option>
                         <option value="1-10">1-10 employees</option>
                         <option value="11-50">11-50 employees</option>
@@ -340,7 +354,7 @@ const SettingsPage = () => {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-300 mb-2">Timezone</label>
-                      <select value={orgSettings.timezone} onChange={(e) => setOrgSettings({ ...orgSettings, timezone: e.target.value })} className="w-full px-4 py-3 bg-gray-700/50 border border-purple-500/30 rounded-lg text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all">
+                      <select value={orgSettings.timezone} onChange={(e) => setOrgSettings({ ...orgSettings, timezone: e.target.value })} className="w-full px-4 py-3 bg-gray-950 border-2 border-purple-500/30 rounded-xl text-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all hover:border-purple-500/50 cursor-pointer shadow-lg shadow-purple-500/10 hover:shadow-purple-500/20">
                         <option value="UTC">UTC</option>
                         <option value="America/New_York">Eastern Time (ET)</option>
                         <option value="America/Chicago">Central Time (CT)</option>
@@ -355,7 +369,7 @@ const SettingsPage = () => {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-300 mb-2">Default Currency</label>
-                      <select value={orgSettings.default_currency} onChange={(e) => setOrgSettings({ ...orgSettings, default_currency: e.target.value })} className="w-full px-4 py-3 bg-gray-700/50 border border-purple-500/30 rounded-lg text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all">
+                      <select value={orgSettings.default_currency} onChange={(e) => setOrgSettings({ ...orgSettings, default_currency: e.target.value })} className="w-full px-4 py-3 bg-gray-950 border-2 border-purple-500/30 rounded-xl text-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all hover:border-purple-500/50 cursor-pointer shadow-lg shadow-purple-500/10 hover:shadow-purple-500/20">
                         <option value="USD">USD - US Dollar</option>
                         <option value="EUR">EUR - Euro</option>
                         <option value="GBP">GBP - British Pound</option>

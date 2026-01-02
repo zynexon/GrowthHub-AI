@@ -54,7 +54,7 @@ def update_organization_settings():
 def get_user_profile():
     """Get current user profile"""
     try:
-        user_id = request.user_id
+        user_id = request.user.id  # Changed from request.user_id
         profile = SettingsService.get_user_profile(user_id)
         
         if not profile:
@@ -71,7 +71,7 @@ def update_user_profile():
     """Update current user profile"""
     try:
         data = request.get_json()
-        user_id = request.user_id
+        user_id = request.user.id  # Changed from request.user_id
         
         # Allowed fields to update
         allowed_fields = ['full_name', 'email']
@@ -96,7 +96,7 @@ def change_password():
     """Change user password"""
     try:
         data = request.get_json()
-        user_id = request.user_id
+        user_id = request.user.id  # Changed from request.user_id
         new_password = data.get('new_password')
         
         if not new_password:
@@ -122,7 +122,7 @@ def change_password():
 def get_notification_preferences():
     """Get notification preferences"""
     try:
-        user_id = request.user_id
+        user_id = request.user.id
         organization_id = request.headers.get('X-Organization-Id')
         
         preferences = SettingsService.get_notification_preferences(user_id, organization_id)
@@ -142,7 +142,7 @@ def update_notification_preferences():
     """Update notification preferences"""
     try:
         data = request.get_json()
-        user_id = request.user_id
+        user_id = request.user.id
         organization_id = request.headers.get('X-Organization-Id')
         
         # Allowed fields to update
