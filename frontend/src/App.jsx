@@ -20,6 +20,7 @@ import CustomersPage from './pages/customers/CustomersPage'
 import DataLabelingPage from './pages/data-labeling/DataLabelingPage'
 import TalentPage from './pages/talent/TalentPage'
 import JobsPage from './pages/jobs/JobsPage'
+import SettingsPage from './pages/settings/SettingsPage'
 
 function ProtectedRoute({ children }) {
   const { user } = useAuthStore()
@@ -55,6 +56,7 @@ function App() {
           <Route path="/data-labeling" element={<DataLabelingPage />} />
           <Route path="/talent" element={<TalentPage />} />
           <Route path="/jobs" element={<JobsPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
         </Route>
 
         {/* Fallback */}
