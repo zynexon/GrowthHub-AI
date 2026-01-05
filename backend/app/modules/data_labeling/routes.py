@@ -1,6 +1,7 @@
 """Data labeling routes."""
 from flask import Blueprint, request, jsonify, make_response
 from app.auth.decorators import require_auth, require_role
+from app.auth.limit_decorators import require_limit
 from app.modules.data_labeling.services import DataLabelingService
 
 data_labeling_bp = Blueprint('data_labeling', __name__, url_prefix='/api/data-labeling')
@@ -28,6 +29,7 @@ def get_dataset(dataset_id):
 @data_labeling_bp.route('/datasets', methods=['POST'])
 @require_auth
 @require_role('org_owner', 'org_member')
+@require_limit('datasets')
 def create_dataset():
     """Upload CSV and create dataset."""
     if 'file' not in request.files:
@@ -90,6 +92,7 @@ def skip_row(dataset_id):
 @data_labeling_bp.route('/datasets/<dataset_id>/export', methods=['GET'])
 @require_auth
 @require_role('org_owner', 'org_member')
+@require_limit('export')
 def export_dataset(dataset_id):
     """Export labeled data as CSV."""
     try:

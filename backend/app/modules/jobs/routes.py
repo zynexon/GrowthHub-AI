@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
 from app.auth.decorators import require_auth, require_role
+from app.auth.limit_decorators import require_limit
 from app.modules.jobs.services import JobsService
 
 jobs_bp = Blueprint('jobs', __name__, url_prefix='/api/jobs')
@@ -46,6 +47,7 @@ def get_job(job_id):
 @jobs_bp.route('', methods=['POST'])
 @require_auth
 @require_role('org_owner', 'org_member')
+@require_limit('jobs')
 def create_job():
     """Create new job"""
     try:

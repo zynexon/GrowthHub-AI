@@ -32,6 +32,7 @@ def create_app(config_name='development'):
     from .modules.jobs.routes import jobs_bp
     from .modules.api_keys.routes import api_keys_bp
     from .modules.settings.routes import settings_bp
+    from .modules.stripe_routes import stripe_bp
     from .api.public_routes import public_api_bp
     
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
@@ -42,6 +43,7 @@ def create_app(config_name='development'):
     app.register_blueprint(jobs_bp)
     app.register_blueprint(api_keys_bp)
     app.register_blueprint(settings_bp)
+    app.register_blueprint(stripe_bp)
     app.register_blueprint(public_api_bp)  # Public API with API key auth
     
     # Health check endpoint

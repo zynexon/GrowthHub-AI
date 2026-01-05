@@ -1,6 +1,7 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { settingsService } from '../../services/settings.service';
 import { apiKeysService } from '../../services/apiKeys.service';
+import { stripeService } from '../../services/stripe.service';
 import { useAuthStore } from '../../store/authStore';
 
 const SettingsPage = () => {
@@ -87,8 +88,8 @@ const SettingsPage = () => {
           });
           break;
         case 'billing':
-          const billing = await settingsService.getBillingInfo();
-          setBillingInfo(billing);
+          const subscription = await stripeService.getSubscription();
+          setBillingInfo(subscription);
           break;
       }
     } catch (error) {
@@ -569,35 +570,185 @@ const SettingsPage = () => {
               {activeTab === 'billing' && billingInfo && (
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-2xl font-bold text-white mb-2">Billing & Plan</h2>
-                    <p className="text-gray-400">Manage your subscription and view usage information.</p>
+                    <h2 className="text-2xl font-bold text-white mb-2">Billing & Subscription</h2>
+                    <p className="text-gray-400">Manage your subscription and view usage limits.</p>
                   </div>
-                  <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 border border-purple-500/30 p-8 rounded-xl mt-8">
-                    <div className="flex items-center justify-between">
+
+                  {/* Current Plan Card */}
+                  <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 border border-purple-500/30 p-8 rounded-xl">
+                    <div className="flex items-center justify-between mb-6">
                       <div>
-                        <h3 className="text-3xl font-bold text-white">{billingInfo.current_plan}</h3>
-                        <p className="text-sm text-purple-300 mt-2">Current Plan</p>
-                      </div>
-                      <div className="text-6xl">💎</div>
-                    </div>
-                  </div>
-                  <div className="bg-gray-700/30 border border-purple-500/20 p-6 rounded-lg mt-6">
-                    <h3 className="font-semibold text-white text-lg mb-4">Usage Summary</h3>
-                    <div className="space-y-3">
-                      {Object.entries(billingInfo.usage).map(([key, value]) => (
-                        <div key={key} className="flex justify-between items-center py-2">
-                          <span className="text-gray-300 capitalize">{key.replace('_', ' ')}</span>
-                          <span className="font-medium text-white">{value}</span>
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="text-3xl font-bold text-white capitalize">{billingInfo.plan_type || 'Free'} Plan</h3>
+                          {billingInfo.plan_type === 'pro' && (
+                            <span className="px-3 py-1 bg-purple-600 text-white text-sm font-semibold rounded-full">POPULAR</span>
+                          )}
+                          {billingInfo.plan_type === 'enterprise' && (
+                            <span className="px-3 py-1 bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-sm font-semibold rounded-full">PREMIUM</span>
+                          )}
                         </div>
-                      ))}
+                        <p className="text-purple-300">
+                          {billingInfo.subscription_status === 'active' && billingInfo.current_period_end && 
+                            `Renews on ${new Date(billingInfo.current_period_end).toLocaleDateString()}`
+                          }
+                          {billingInfo.subscription_status === 'past_due' && 
+                            <span className="text-red-400">⚠️ Payment past due</span>
+                          }
+                          {billingInfo.subscription_status === 'canceled' && 
+                            <span className="text-yellow-400">Subscription canceled</span>
+                          }
+                          {!billingInfo.subscription_status && 'Active'}
+                        </p>
+                      </div>
+                      <div className="text-6xl">
+                        {billingInfo.plan_type === 'free' && '🆓'}
+                        {billingInfo.plan_type === 'pro' && '💎'}
+                        {billingInfo.plan_type === 'enterprise' && '👑'}
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-3">
+                      {billingInfo.plan_type === 'free' && (
+                        <button
+                          onClick={() => window.location.href = '/pricing'}
+                          className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-purple-500/50 transition-all hover:scale-105"
+                        >
+                          🚀 Upgrade Plan
+                        </button>
+                      )}
+                      {(billingInfo.plan_type === 'pro' || billingInfo.plan_type === 'enterprise') && billingInfo.subscription_status === 'active' && (
+                        <button
+                          onClick={async () => {
+                            try {
+                              const { url } = await stripeService.createPortalSession(`${window.location.origin}/settings`);
+                              window.location.href = url;
+                            } catch (error) {
+                              console.error('Failed to open portal:', error);
+                              alert('Failed to open billing portal');
+                            }
+                          }}
+                          className="flex-1 px-6 py-3 bg-gray-700 text-white rounded-lg font-semibold hover:bg-gray-600 transition-all"
+                        >
+                          ⚙️ Manage Subscription
+                        </button>
+                      )}
                     </div>
                   </div>
-                  <div className="border-t border-purple-500/20 pt-6 mt-6">
-                    <button disabled className="w-full px-6 py-4 bg-gray-700/50 text-gray-400 rounded-lg cursor-not-allowed border border-purple-500/20">
-                      🚀 Upgrade Plan (Coming Soon)
-                    </button>
-                    <p className="text-xs text-gray-500 text-center mt-3">Payment integration will be available soon</p>
-                  </div>
+
+                  {/* Usage & Limits */}
+                  {billingInfo.limits && (
+                    <div className="bg-gray-800/50 border border-purple-500/20 p-6 rounded-xl">
+                      <h3 className="font-semibold text-white text-lg mb-4 flex items-center gap-2">
+                        <span>📊</span>
+                        Usage & Limits
+                      </h3>
+                      <div className="space-y-4">
+                        {/* Datasets */}
+                        <div>
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-gray-300">Datasets</span>
+                            <span className="font-medium text-white">
+                              {billingInfo.usage?.datasets || 0} / {billingInfo.limits.datasets === -1 ? '∞' : billingInfo.limits.datasets}
+                            </span>
+                          </div>
+                          {billingInfo.limits.datasets !== -1 && (
+                            <div className="w-full bg-gray-700 rounded-full h-2">
+                              <div 
+                                className="bg-gradient-to-r from-purple-600 to-blue-600 h-2 rounded-full transition-all"
+                                style={{ width: `${Math.min(100, ((billingInfo.usage?.datasets || 0) / billingInfo.limits.datasets) * 100)}%` }}
+                              />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Talent Profiles */}
+                        <div>
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-gray-300">Talent Profiles</span>
+                            <span className="font-medium text-white">
+                              {billingInfo.usage?.talent_profiles || 0} / {billingInfo.limits.talent_profiles === -1 ? '∞' : billingInfo.limits.talent_profiles}
+                            </span>
+                          </div>
+                          {billingInfo.limits.talent_profiles !== -1 && (
+                            <div className="w-full bg-gray-700 rounded-full h-2">
+                              <div 
+                                className="bg-gradient-to-r from-purple-600 to-blue-600 h-2 rounded-full transition-all"
+                                style={{ width: `${Math.min(100, ((billingInfo.usage?.talent_profiles || 0) / billingInfo.limits.talent_profiles) * 100)}%` }}
+                              />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Jobs */}
+                        <div>
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-gray-300">Jobs</span>
+                            <span className="font-medium text-white">
+                              {billingInfo.usage?.jobs || 0} / {billingInfo.limits.jobs === -1 ? '∞' : billingInfo.limits.jobs}
+                            </span>
+                          </div>
+                          {billingInfo.limits.jobs !== -1 && (
+                            <div className="w-full bg-gray-700 rounded-full h-2">
+                              <div 
+                                className="bg-gradient-to-r from-purple-600 to-blue-600 h-2 rounded-full transition-all"
+                                style={{ width: `${Math.min(100, ((billingInfo.usage?.jobs || 0) / billingInfo.limits.jobs) * 100)}%` }}
+                              />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Features */}
+                        <div className="border-t border-gray-700 pt-4 mt-4">
+                          <h4 className="text-sm font-semibold text-gray-400 mb-3">Features</h4>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="flex items-center gap-2">
+                              {billingInfo.limits.can_export ? (
+                                <span className="text-green-400">✓</span>
+                              ) : (
+                                <span className="text-red-400">✗</span>
+                              )}
+                              <span className="text-gray-300 text-sm">CSV Export</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {billingInfo.limits.api_access ? (
+                                <span className="text-green-400">✓</span>
+                              ) : (
+                                <span className="text-red-400">✗</span>
+                              )}
+                              <span className="text-gray-300 text-sm">API Access</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Billing History */}
+                  {(billingInfo.plan_type === 'pro' || billingInfo.plan_type === 'enterprise') && (
+                    <div className="bg-gray-800/50 border border-purple-500/20 p-6 rounded-xl">
+                      <h3 className="font-semibold text-white text-lg mb-4 flex items-center gap-2">
+                        <span>📄</span>
+                        Billing Information
+                      </h3>
+                      <p className="text-gray-400 mb-4">
+                        View invoices and payment history in the{' '}
+                        <button
+                          onClick={async () => {
+                            try {
+                              const { url } = await stripeService.createPortalSession(`${window.location.origin}/settings`);
+                              window.location.href = url;
+                            } catch (error) {
+                              console.error('Failed to open portal:', error);
+                            }
+                          }}
+                          className="text-purple-400 hover:text-purple-300 underline"
+                        >
+                          Stripe Customer Portal
+                        </button>
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </>
@@ -674,10 +825,6 @@ const SettingsPage = () => {
                   ))}
                 </div>
               </div>
-            </div>
-            <div className="bg-blue-500/10 border border-blue-500/30 p-4 rounded-lg mb-6">
-              <p className="text-blue-400 text-sm font-medium mb-2">Example Usage (curl):</p>
-              <code className="block p-3 bg-gray-950 rounded text-gray-300 font-mono text-xs break-all">{`curl -H "Authorization: Bearer ${newApiKey.api_key}" http://localhost:5000/api/v1/leads`}</code>
             </div>
             <button onClick={() => { setShowSuccessModal(false); setNewApiKey(null); }} className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg hover:shadow-purple-500/50 transition-all font-medium">I've Saved My Key</button>
           </div>

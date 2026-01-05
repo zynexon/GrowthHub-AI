@@ -404,16 +404,6 @@ export default function APIKeysPage() {
                 )}
               </div>
 
-              <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
-                <div className="text-sm text-blue-300 mb-2">
-                  <strong>How to use:</strong>
-                </div>
-                <pre className="text-xs text-gray-300 bg-gray-900/50 p-3 rounded overflow-x-auto">
-{`curl -H "Authorization: Bearer ${newApiKey.api_key}" \\
-  https://your-domain.com/api/leads`}
-                </pre>
-              </div>
-
               <button
                 onClick={() => {
                   setShowKeyModal(false);

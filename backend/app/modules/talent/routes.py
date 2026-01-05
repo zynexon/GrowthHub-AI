@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
 from app.auth.decorators import require_auth, require_role
+from app.auth.limit_decorators import require_limit
 from app.modules.talent.services import TalentService
 
 talent_bp = Blueprint('talent', __name__, url_prefix='/api/talent')
@@ -46,6 +47,7 @@ def get_talent(talent_id):
 @talent_bp.route('', methods=['POST'])
 @require_auth
 @require_role('org_owner', 'org_member')
+@require_limit('talent')
 def create_talent():
     """Create new talent"""
     try:

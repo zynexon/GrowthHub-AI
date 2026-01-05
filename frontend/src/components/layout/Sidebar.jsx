@@ -14,6 +14,7 @@ export default function Sidebar() {
   ]
 
   const bottomNavigation = [
+    { name: 'Pricing', href: '/pricing', icon: '💳' },
     { name: 'Settings', href: '/settings', icon: '⚙️' }
   ]
 

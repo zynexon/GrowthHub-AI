@@ -20,6 +20,7 @@ import CustomersPage from './pages/customers/CustomersPage'
 import DataLabelingPage from './pages/data-labeling/DataLabelingPage'
 import TalentPage from './pages/talent/TalentPage'
 import JobsPage from './pages/jobs/JobsPage'
+import PricingPage from './pages/pricing/PricingPage'
 import SettingsPage from './pages/settings/SettingsPage'
 
 function ProtectedRoute({ children }) {
@@ -56,6 +57,7 @@ function App() {
           <Route path="/data-labeling" element={<DataLabelingPage />} />
           <Route path="/talent" element={<TalentPage />} />
           <Route path="/jobs" element={<JobsPage />} />
+          <Route path="/pricing" element={<PricingPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
 

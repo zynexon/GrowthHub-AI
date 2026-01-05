@@ -1,14 +1,31 @@
 import { useState, useRef, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { talentService } from '../../services/talent.service'
+import { stripeService } from '../../services/stripe.service'
+import UpgradeModal from '../../components/UpgradeModal'
 
 export default function TalentPage() {
   const [view, setView] = useState('list') // list, add, edit
   const [selectedTalent, setSelectedTalent] = useState(null)
   const [form, setForm] = useState({ name: '', email: '', skillType: 'data_labeling' })
   const [isSkillTypeOpen, setIsSkillTypeOpen] = useState(false)
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
+  const [currentPlan, setCurrentPlan] = useState('free')
   const skillTypeRef = useRef(null)
   const queryClient = useQueryClient()
+
+  // Fetch subscription info
+  useEffect(() => {
+    const fetchSubscription = async () => {
+      try {
+        const data = await stripeService.getSubscription()
+        setCurrentPlan(data.plan_type || 'free')
+      } catch (error) {
+        console.error('Failed to fetch subscription:', error)
+      }
+    }
+    fetchSubscription()
+  }, [])
 
   // Fetch talent list
   const { data: talentData, isLoading } = useQuery({
@@ -30,6 +47,13 @@ export default function TalentPage() {
       queryClient.invalidateQueries(['talent-statistics'])
       setView('list')
       resetForm()
+    },
+    onError: (error) => {
+      if (error.response?.status === 403 && error.response?.data?.upgrade_required) {
+        setShowUpgradeModal(true)
+      } else {
+        console.error('Failed to create talent:', error)
+      }
     }
   })
 
@@ -414,6 +438,14 @@ export default function TalentPage() {
           </form>
         </div>
       )}
+
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        show={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        resourceType="talent"
+        currentPlan={currentPlan}
+      />
     </div>
   )
 }

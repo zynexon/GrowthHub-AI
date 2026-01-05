@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { dataLabelingService } from '../../services/data-labeling.service'
+import { stripeService } from '../../services/stripe.service'
+import UpgradeModal from '../../components/UpgradeModal'
 
 export default function DataLabelingPage() {
   const [view, setView] = useState('list') // list, upload, label
@@ -8,8 +10,23 @@ export default function DataLabelingPage() {
   const [uploadForm, setUploadForm] = useState({ name: '', labelType: 'intent', file: null })
   const [isLabelTypeOpen, setIsLabelTypeOpen] = useState(false)
   const [showFormatInfo, setShowFormatInfo] = useState(false)
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
+  const [limitResourceType, setLimitResourceType] = useState('datasets')
+  const [currentPlan, setCurrentPlan] = useState('free')
   const labelTypeRef = useRef(null)
   const queryClient = useQueryClient()
+
+  useEffect(() => {
+    const fetchSubscription = async () => {
+      try {
+        const data = await stripeService.getSubscription()
+        setCurrentPlan(data.plan_type || 'free')
+      } catch (error) {
+        console.error('Failed to fetch subscription:', error)
+      }
+    }
+    fetchSubscription()
+  }, [])
 
   const { data: datasetsData, isLoading, error } = useQuery({
     queryKey: ['labeling-datasets'],
@@ -36,8 +53,13 @@ export default function DataLabelingPage() {
     },
     onError: (error) => {
       console.error('Upload error:', error)
-      const errorMsg = error.response?.data?.error || error.message || 'Upload failed'
-      alert(`Upload failed: ${errorMsg}\n\nMake sure you've created the database tables. See DATA_LABELING_TEST.md for instructions.`)
+      if (error.response?.status === 403 && error.response?.data?.upgrade_required) {
+        setLimitResourceType('datasets')
+        setShowUpgradeModal(true)
+      } else {
+        const errorMsg = error.response?.data?.error || error.message || 'Upload failed'
+        alert(`Upload failed: ${errorMsg}\n\nMake sure you've created the database tables. See DATA_LABELING_TEST.md for instructions.`)
+      }
     },
   })
 
@@ -75,7 +97,30 @@ export default function DataLabelingPage() {
       link.remove()
       window.URL.revokeObjectURL(url)
     },
-    onError: (error) => {
+    onError: async (error) => {
+      console.error('Export error:', error)
+      
+      // Handle blob error response (when responseType is 'blob' but server returns JSON error)
+      if (error.response?.status === 403 && error.response?.data instanceof Blob) {
+        try {
+          const text = await error.response.data.text()
+          const errorData = JSON.parse(text)
+          console.log('Parsed error data:', errorData)
+          
+          if (errorData.upgrade_required) {
+            setLimitResourceType('export')
+            setShowUpgradeModal(true)
+            return
+          }
+        } catch (e) {
+          console.error('Failed to parse error blob:', e)
+        }
+      } else if (error.response?.status === 403 && error.response?.data?.upgrade_required) {
+        setLimitResourceType('export')
+        setShowUpgradeModal(true)
+        return
+      }
+      
       alert('Export failed: ' + (error.message || 'Unknown error'))
     }
   })
@@ -590,6 +635,14 @@ export default function DataLabelingPage() {
           </div>
         </div>
       )}
+
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        show={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        resourceType={limitResourceType}
+        currentPlan={currentPlan}
+      />
     </div>
   )
 }

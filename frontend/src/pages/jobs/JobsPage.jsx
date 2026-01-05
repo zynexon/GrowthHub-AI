@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { jobsService } from '../../services/jobs.service';
 import { talentService } from '../../services/talent.service';
+import { stripeService } from '../../services/stripe.service';
+import UpgradeModal from '../../components/UpgradeModal';
 
 export default function JobsPage() {
   const [jobs, setJobs] = useState([]);
@@ -10,6 +12,8 @@ export default function JobsPage() {
   const [showForm, setShowForm] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
   const [selectedJob, setSelectedJob] = useState(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [currentPlan, setCurrentPlan] = useState('free');
   const [formData, setFormData] = useState({
     title: '',
     jobType: '',
@@ -44,7 +48,17 @@ export default function JobsPage() {
 
   useEffect(() => {
     loadData();
+    fetchSubscription();
   }, []);
+
+  const fetchSubscription = async () => {
+    try {
+      const data = await stripeService.getSubscription();
+      setCurrentPlan(data.plan_type || 'free');
+    } catch (error) {
+      console.error('Failed to fetch subscription:', error);
+    }
+  };
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -108,7 +122,11 @@ export default function JobsPage() {
       loadData();
     } catch (error) {
       console.error('Error saving job:', error);
-      alert('Failed to save job');
+      if (error.response?.status === 403 && error.response?.data?.upgrade_required) {
+        setShowUpgradeModal(true);
+      } else {
+        alert('Failed to save job');
+      }
     }
   };
 
@@ -627,6 +645,14 @@ export default function JobsPage() {
           </div>
         </div>
       )}
+
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        show={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        resourceType="jobs"
+        currentPlan={currentPlan}
+      />
     </div>
   );
 }
