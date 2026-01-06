@@ -148,6 +148,24 @@ class RevOpsService:
         
         # Recalculate score
         activity_date = datetime.fromisoformat(lead['last_activity_date'].replace('Z', '+00:00'))
+    
+    def clear_leads(self, org_id: str):
+        """Delete all leads for an organization."""
+        response = self.admin.table('leads')\
+            .delete()\
+            .eq('organization_id', org_id)\
+            .execute()
+        
+        return {'message': 'All leads cleared successfully', 'deleted_count': len(response.data) if response.data else 0}
+    
+    def clear_campaigns(self, org_id: str):
+        """Delete all campaigns for an organization."""
+        response = self.admin.table('campaigns')\
+            .delete()\
+            .eq('organization_id', org_id)\
+            .execute()
+        
+        return {'message': 'All campaigns cleared successfully', 'deleted_count': len(response.data) if response.data else 0}
         score, temperature = calculate_lead_score(
             lead['source'],
             lead['engagement_level'],

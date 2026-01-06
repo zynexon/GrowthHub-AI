@@ -36,6 +36,10 @@ def upload_leads():
     org_id = request.organization_id
     file = request.files.get('file')
     
+    print(f"[upload_leads] File received: {file}")
+    print(f"[upload_leads] Request files: {request.files}")
+    print(f"[upload_leads] File name: {file.filename if file else 'None'}")
+    
     if not file:
         return jsonify({'error': 'No file provided'}), 400
     
@@ -43,6 +47,9 @@ def upload_leads():
         result = revops_service.upload_leads_csv(org_id, file)
         return jsonify(result), 201
     except Exception as e:
+        print(f"[upload_leads] Error: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 400
 
 
@@ -67,6 +74,16 @@ def update_lead(lead_id):
     return jsonify(result), 200
 
 
+@revops_bp.route('/leads/clear', methods=['DELETE'])
+@require_auth
+@require_role('org_owner')
+def clear_leads():
+    """Clear all leads for the organization."""
+    org_id = request.organization_id
+    result = revops_service.clear_leads(org_id)
+    return jsonify(result), 200
+
+
 # Campaign routes
 
 @revops_bp.route('/campaigns', methods=['GET'])
@@ -88,6 +105,16 @@ def create_campaign():
     data = request.get_json()
     result = revops_service.create_campaign(org_id, data)
     return jsonify(result), 201
+
+
+@revops_bp.route('/campaigns/clear', methods=['DELETE'])
+@require_auth
+@require_role('org_owner')
+def clear_campaigns():
+    """Clear all campaigns for the organization."""
+    org_id = request.organization_id
+    result = revops_service.clear_campaigns(org_id)
+    return jsonify(result), 200
 
 
 @revops_bp.route('/campaigns/upload', methods=['POST'])

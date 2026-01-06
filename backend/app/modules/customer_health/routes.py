@@ -55,6 +55,14 @@ def upload_customers():
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
+@customer_health_bp.route('/clear', methods=['DELETE'])
+@require_auth
+@require_role('org_owner')
+def clear_customers():
+    """Clear all customers for the organization."""
+    org_id = request.organization_id
+    result = customer_health_service.clear_customers(org_id)
+    return jsonify(result), 200
 
 @customer_health_bp.route('/dashboard', methods=['GET'])
 @require_auth

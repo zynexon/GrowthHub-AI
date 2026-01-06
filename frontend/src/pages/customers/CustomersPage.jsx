@@ -29,6 +29,20 @@ export default function CustomersPage() {
     }
   }
 
+  const handleClearData = async () => {
+    if (!confirm('Are you sure you want to delete ALL customers? This action cannot be undone.')) {
+      return
+    }
+
+    try {
+      await customerHealthService.clearCustomers()
+      refetch()
+      alert('All customers cleared successfully!')
+    } catch (error) {
+      alert('Failed to clear customers: ' + (error.response?.data?.error || error.message))
+    }
+  }
+
   const getHealthColor = (status) => {
     switch (status) {
       case 'healthy': return 'text-green-400 bg-green-500/20 border-green-500/50 shadow-green-500/30'
@@ -70,6 +84,15 @@ export default function CustomersPage() {
           >
             <span className="text-xl">ℹ️</span>
             <span>Format</span>
+          </button>
+          
+          <button
+            onClick={handleClearData}
+            className="flex items-center gap-2 px-4 py-3 bg-red-600/20 text-red-400 rounded-lg font-medium hover:bg-red-600/30 hover:text-red-300 transition-all border border-red-500/50 hover:border-red-500"
+            title="Clear all customers"
+          >
+            <span className="text-xl">🗑️</span>
+            <span>Clear Data</span>
           </button>
           
           <label className="group btn-primary cursor-pointer flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg shadow-purple-500/50 hover:scale-105 hover:shadow-purple-500/70">
@@ -238,6 +261,10 @@ export default function CustomersPage() {
             </div>
             
             <div className="p-6 space-y-4">
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 mb-4">
+                <p className="text-blue-300 text-sm font-medium">📄 Format: CSV (UTF-8, comma-delimited)</p>
+              </div>
+              
               <p className="text-gray-300 mb-4">Your customers CSV should include:</p>
               
               <div className="grid md:grid-cols-2 gap-6">

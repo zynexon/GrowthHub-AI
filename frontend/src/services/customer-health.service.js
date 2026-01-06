@@ -29,5 +29,10 @@ export const customerHealthService = {
   getDashboardStats: async () => {
     const response = await api.get('/customer-health/dashboard')
     return response.data
+  },
+
+  clearCustomers: async () => {
+    const response = await api.delete('/customer-health/clear')
+    return response.data
   }
 }

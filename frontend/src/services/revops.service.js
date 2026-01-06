@@ -36,6 +36,16 @@ export const revopsService = {
     return response.data
   },
 
+  async clearLeads() {
+    const response = await api.delete('/revops/leads/clear')
+    return response.data
+  },
+
+  async clearCampaigns() {
+    const response = await api.delete('/revops/campaigns/clear')
+    return response.data
+  },
+
   // Campaigns
   async getCampaigns() {
     const response = await api.get('/revops/campaigns')

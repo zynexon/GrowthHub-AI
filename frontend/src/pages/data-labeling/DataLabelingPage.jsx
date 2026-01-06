@@ -581,6 +581,10 @@ export default function DataLabelingPage() {
             </div>
             
             <div className="p-6 space-y-4">
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 mb-4">
+                <p className="text-blue-300 text-sm font-medium">📄 Format: CSV (UTF-8, comma-delimited)</p>
+              </div>
+              
               <p className="text-gray-300 mb-4">Your dataset CSV must include:</p>
               
               <div className="space-y-3">

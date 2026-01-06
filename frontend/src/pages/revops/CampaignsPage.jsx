@@ -28,6 +28,20 @@ export default function CampaignsPage() {
     }
   }
 
+  const handleClearData = async () => {
+    if (!confirm('Are you sure you want to delete ALL campaigns? This action cannot be undone.')) {
+      return
+    }
+    
+    try {
+      await revopsService.clearCampaigns()
+      refetch()
+      alert('All campaigns cleared successfully!')
+    } catch (error) {
+      alert('Failed to clear campaigns: ' + (error.response?.data?.error || error.message))
+    }
+  }
+
   const getPerformanceColor = (performance) => {
     switch (performance) {
       case 'excellent': return 'text-green-400 bg-green-500/20 border-green-500/30'
@@ -64,6 +78,15 @@ export default function CampaignsPage() {
           >
             <span className="text-xl">ℹ️</span>
             <span>Format</span>
+          </button>
+
+          <button
+            onClick={handleClearData}
+            className="flex items-center gap-2 px-4 py-3 bg-red-600/20 text-red-400 rounded-lg font-medium hover:bg-red-600/30 hover:text-red-300 transition-all border border-red-500/30 hover:border-red-500/50"
+            title="Clear all campaigns"
+          >
+            <span className="text-lg">🗑️</span>
+            <span>Clear Data</span>
           </button>
           
           <label className="group btn-primary cursor-pointer flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg shadow-purple-500/50 hover:scale-105 hover:shadow-purple-500/70">
@@ -158,6 +181,10 @@ export default function CampaignsPage() {
             </div>
             
             <div className="p-6 space-y-4">
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 mb-4">
+                <p className="text-blue-300 text-sm font-medium">📄 Format: CSV (UTF-8, comma-delimited)</p>
+              </div>
+              
               <p className="text-gray-300 mb-4">Your campaigns CSV should include:</p>
               
               <div className="grid md:grid-cols-2 gap-6">
@@ -177,15 +204,15 @@ export default function CampaignsPage() {
                     <li className="flex items-start gap-2">
                       <span className="text-purple-400">•</span>
                       <div>
-                        <span className="text-white font-semibold">channel</span>
-                        <span className="text-gray-400"> - email, paid_ads, social, etc.</span>
+                        <span className="text-white font-semibold">spend</span>
+                        <span className="text-gray-400"> - Amount spent (numeric)</span>
                       </div>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-purple-400">•</span>
                       <div>
-                        <span className="text-white font-semibold">spend</span>
-                        <span className="text-gray-400"> - Amount spent (numeric)</span>
+                        <span className="text-white font-semibold">revenue</span>
+                        <span className="text-gray-400"> - Revenue generated (numeric)</span>
                       </div>
                     </li>
                   </ul>
@@ -197,8 +224,36 @@ export default function CampaignsPage() {
                     <li className="flex items-start gap-2">
                       <span className="text-blue-400">•</span>
                       <div>
-                        <span className="text-white font-semibold">period</span>
-                        <span className="text-gray-400"> - Q1-2025, Jan-2025, etc.</span>
+                        <span className="text-white font-semibold">channel</span>
+                        <span className="text-gray-400"> - email, paid_ads, social, etc.</span>
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-400">•</span>
+                      <div>
+                        <span className="text-white font-semibold">start_date</span>
+                        <span className="text-gray-400"> - Campaign start (YYYY-MM-DD)</span>
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-400">•</span>
+                      <div>
+                        <span className="text-white font-semibold">end_date</span>
+                        <span className="text-gray-400"> - Campaign end (YYYY-MM-DD)</span>
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-400">•</span>
+                      <div>
+                        <span className="text-white font-semibold">lead_count</span>
+                        <span className="text-gray-400"> - Number of leads generated</span>
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-400">•</span>
+                      <div>
+                        <span className="text-white font-semibold">conversion_count</span>
+                        <span className="text-gray-400"> - Number of conversions</span>
                       </div>
                     </li>
                   </ul>

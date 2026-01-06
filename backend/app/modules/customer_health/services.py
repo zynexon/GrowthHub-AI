@@ -202,6 +202,19 @@ class CustomerHealthService:
             'expansion_opportunities': expansion_opportunities,
             'alerts': alerts[:10]  # Top 10 most urgent
         }
+    
+    def clear_customers(self, org_id: str) -> Dict:
+        """Delete all customers for the organization."""
+        response = self.admin.table('customers')\
+            .delete()\
+            .eq('organization_id', org_id)\
+            .execute()
+        
+        deleted_count = len(response.data) if response.data else 0
+        return {
+            'message': f'Deleted {deleted_count} customers',
+            'deleted': deleted_count
+        }
 
 
 customer_health_service = CustomerHealthService()
