@@ -297,8 +297,8 @@ export default function JobsPage() {
         </button>
       </div>
 
-      {/* Job List Table */}
-      <div className="bg-gradient-to-br from-gray-900/40 to-gray-800/40 backdrop-blur-lg rounded-xl border border-gray-700/50 overflow-hidden animate-fade-in-up" style={{animationDelay: '0.3s'}}>
+      {/* Job List - Desktop Table View */}
+      <div className="hidden lg:block bg-gradient-to-br from-gray-900/40 to-gray-800/40 backdrop-blur-lg rounded-xl border border-gray-700/50 overflow-hidden animate-fade-in-up" style={{animationDelay: '0.3s'}}>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gradient-to-r from-gray-800/50 to-gray-900/50">
@@ -393,6 +393,79 @@ export default function JobsPage() {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Job List - Mobile Card View */}
+      <div className="lg:hidden space-y-4 animate-fade-in-up" style={{animationDelay: '0.3s'}}>
+        {jobs.length === 0 ? (
+          <div className="bg-gradient-to-br from-gray-900/40 to-gray-800/40 backdrop-blur-lg rounded-xl border border-gray-700/50 p-12 text-center">
+            <div className="flex flex-col items-center gap-4 animate-fade-in">
+              <div className="text-6xl opacity-50 animate-float">💼</div>
+              <div className="text-gray-400">No jobs yet. Create your first job to get started!</div>
+            </div>
+          </div>
+        ) : (
+          jobs.map((job, index) => (
+            <div 
+              key={job.id}
+              className="bg-gradient-to-br from-gray-900/40 to-gray-800/40 backdrop-blur-lg rounded-xl border border-gray-700/50 p-4 hover:border-purple-500/30 transition-all animate-fade-in-up"
+              style={{animationDelay: `${0.4 + index * 0.05}s`}}
+            >
+              <div className="space-y-3">
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="text-white font-semibold text-lg flex-1">{job.title}</h3>
+                  {getStatusBadge(job.status)}
+                </div>
+                
+                <div className="flex items-center gap-2 text-gray-300">
+                  {getJobTypeDisplay(job.job_type)}
+                </div>
+                
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-400">Assigned:</span>
+                    {job.talent ? (
+                      <div className="text-white">
+                        {job.talent.name}
+                        <span className="text-gray-400 text-xs ml-1">({job.talent.email})</span>
+                      </div>
+                    ) : (
+                      <span className="text-gray-500">Unassigned</span>
+                    )}
+                  </div>
+                  
+                  {job.due_date && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-400">Due:</span>
+                      <span className="text-white">{new Date(job.due_date).toLocaleDateString()}</span>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex flex-wrap gap-2 pt-2">
+                  <button
+                    onClick={() => viewDetail(job)}
+                    className="flex-1 min-w-[100px] px-3 py-2 bg-gradient-to-r from-blue-600/20 to-blue-700/20 text-blue-400 rounded-lg hover:from-blue-600/30 hover:to-blue-700/30 transition-all text-sm font-medium border border-blue-500/20"
+                  >
+                    👁️ View
+                  </button>
+                  <button
+                    onClick={() => handleEdit(job)}
+                    className="flex-1 min-w-[100px] px-3 py-2 bg-gradient-to-r from-green-600/20 to-emerald-600/20 text-green-400 rounded-lg hover:from-green-600/30 hover:to-emerald-600/30 transition-all text-sm font-medium border border-green-500/20"
+                  >
+                    ✏️ Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(job.id)}
+                    className="px-3 py-2 bg-gradient-to-r from-red-600/20 to-red-700/20 text-red-400 rounded-lg hover:from-red-600/30 hover:to-red-700/30 transition-all text-sm font-medium border border-red-500/20"
+                  >
+                    🗑️
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       {/* Create/Edit Form Modal */}

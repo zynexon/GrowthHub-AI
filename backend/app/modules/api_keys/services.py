@@ -155,8 +155,9 @@ class APIKeyService:
         active_keys = len([k for k in all_keys.data if k['is_active']])
         inactive_keys = total_keys - active_keys
         
-        # Count recently used (last 7 days)
-        seven_days_ago = datetime.utcnow() - timedelta(days=7)
+        # Count recently used (last 7 days) - use timezone-aware datetime
+        from datetime import timezone
+        seven_days_ago = datetime.now(timezone.utc) - timedelta(days=7)
         recently_used = len([
             k for k in all_keys.data 
             if k['last_used_at'] and datetime.fromisoformat(k['last_used_at'].replace('Z', '+00:00')) > seven_days_ago

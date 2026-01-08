@@ -3,6 +3,7 @@ import { settingsService } from '../../services/settings.service';
 import { apiKeysService } from '../../services/apiKeys.service';
 import { stripeService } from '../../services/stripe.service';
 import { useAuthStore } from '../../store/authStore';
+import UpgradeModal from '../../components/UpgradeModal';
 
 const SettingsPage = () => {
   const { user, setUser } = useAuthStore();
@@ -43,6 +44,7 @@ const SettingsPage = () => {
   const [apiKeyStats, setApiKeyStats] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [newApiKey, setNewApiKey] = useState(null);
   const [createForm, setCreateForm] = useState({
     name: '',
@@ -94,6 +96,8 @@ const SettingsPage = () => {
       }
     } catch (error) {
       console.error('Error loading tab data:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
     } finally {
       setLoading(false);
     }
@@ -260,6 +264,46 @@ const SettingsPage = () => {
     alert('Copied to clipboard!');
   };
 
+  const handleCreateKeyClick = () => {
+    const plan = billingInfo?.plan_type || 'free';
+    const currentKeyCount = apiKeys.length;
+
+    // Check limits based on plan
+    if (plan === 'free') {
+      setShowUpgradeModal(true);
+      return;
+    }
+
+    if (plan === 'pro' && currentKeyCount >= 1) {
+      setShowUpgradeModal(true);
+      return;
+    }
+
+    // For pro plan, limit to read-only scopes
+    if (plan === 'pro') {
+      setAvailableScopes([
+        { value: 'read:*', label: 'Read All' },
+        { value: 'read:leads', label: 'Read Leads' },
+        { value: 'read:customers', label: 'Read Customers' },
+        { value: 'read:jobs', label: 'Read Jobs' },
+      ]);
+    } else {
+      // Enterprise has full access
+      setAvailableScopes([
+        { value: 'read:*', label: 'Read All' },
+        { value: 'write:*', label: 'Write All' },
+        { value: 'read:leads', label: 'Read Leads' },
+        { value: 'write:leads', label: 'Write Leads' },
+        { value: 'read:customers', label: 'Read Customers' },
+        { value: 'write:customers', label: 'Write Customers' },
+        { value: 'read:jobs', label: 'Read Jobs' },
+        { value: 'write:jobs', label: 'Write Jobs' },
+      ]);
+    }
+
+    setShowCreateModal(true);
+  };
+
   const tabs = [
     { id: 'organization', label: 'Organization', icon: '🏢' },
     { id: 'profile', label: 'Profile', icon: '👤' },
@@ -280,56 +324,55 @@ const SettingsPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 p-6">
-      <div className="w-full pb-8">
-        <div className="mb-8 animate-fade-in">
-          <h1 className="text-3xl font-bold text-white mb-2">Settings</h1>
-          <p className="text-gray-400">Manage your organization and account preferences</p>
+    <div className="space-y-6 animate-fade-in-up max-w-full overflow-x-hidden">
+      <div className="mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">⚙️ Settings</h1>
+        <p className="text-sm sm:text-base text-gray-400">Manage your organization and account preferences</p>
+      </div>
+
+      <div className="bg-gray-800/50 backdrop-blur-sm rounded-t-xl border-b border-purple-500/20 animate-slide-in">
+        <div className="flex justify-between sm:justify-start sm:space-x-1 p-2">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex flex-col sm:flex-row items-center gap-1 sm:gap-2 px-2 sm:px-4 md:px-6 py-2 sm:py-3 rounded-lg font-medium text-xs sm:text-sm transition-all duration-300 flex-1 sm:flex-initial ${
+                activeTab === tab.id
+                  ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg shadow-purple-500/50 sm:scale-105'
+                  : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
+              }`}
+            >
+              <span className="text-base sm:text-lg">{tab.icon}</span>
+              <span className="text-[10px] sm:text-xs md:text-sm whitespace-nowrap">{tab.label}</span>
+            </button>
+          ))}
         </div>
+      </div>
 
-        <div className="bg-gray-800/50 backdrop-blur-sm rounded-t-xl border-b border-purple-500/20 animate-slide-in">
-          <div className="flex space-x-1 p-2 overflow-x-auto">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium text-sm transition-all duration-300 whitespace-nowrap ${
-                  activeTab === tab.id
-                    ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg shadow-purple-500/50 scale-105'
-                    : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
-                }`}
-              >
-                <span className="text-lg">{tab.icon}</span>
-                <span>{tab.label}</span>
-              </button>
-            ))}
-          </div>
+      {saveSuccess && (
+        <div className="p-4 bg-green-500/20 border border-green-500/50 text-green-400 rounded-lg backdrop-blur-sm animate-fade-in">
+          ✓ {saveSuccess}
         </div>
+      )}
 
-        {saveSuccess && (
-          <div className="mt-4 p-4 bg-green-500/20 border border-green-500/50 text-green-400 rounded-lg backdrop-blur-sm animate-fade-in">
-            ✓ {saveSuccess}
+      <div className="bg-gray-800/30 backdrop-blur-sm rounded-b-xl border border-purple-500/20 p-4 sm:p-6 lg:p-8 animate-fade-in overflow-x-hidden">
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
+            <p className="mt-4 text-gray-400">Loading...</p>
           </div>
-        )}
-
-        <div className="bg-gray-800/30 backdrop-blur-sm rounded-b-xl border border-purple-500/20 p-8 animate-fade-in min-h-[600px]">
-          {loading ? (
-            <div className="text-center py-12">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
-              <p className="mt-4 text-gray-400">Loading...</p>
-            </div>
-          ) : (
-            <>
-              {activeTab === 'organization' && (
-                <div className="space-y-6">
-                  <div>
-                    <h2 className="text-2xl font-bold text-white mb-2">Organization Settings</h2>
-                    <p className="text-gray-400">Manage your organization's basic information and preferences.</p>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+        ) : (
+          <>
+            {activeTab === 'organization' && (
+              <div className="space-y-6 max-w-6xl">
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">Organization Settings</h2>
+                  <p className="text-sm sm:text-base text-gray-400">Manage your organization's basic information and preferences.</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mt-8">
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">Industry</label>
-                      <select value={orgSettings.industry || ''} onChange={(e) => setOrgSettings({ ...orgSettings, industry: e.target.value })} className="w-full px-4 py-3 bg-gray-950 border-2 border-purple-500/30 rounded-xl text-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all hover:border-purple-500/50 cursor-pointer shadow-lg shadow-purple-500/10 hover:shadow-purple-500/20">
+                      <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-2">Industry</label>
+                      <select value={orgSettings.industry || ''} onChange={(e) => setOrgSettings({ ...orgSettings, industry: e.target.value })} className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-950 border-2 border-purple-500/30 rounded-xl text-white text-sm sm:text-base focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all hover:border-purple-500/50 cursor-pointer sm:shadow-lg sm:shadow-purple-500/10 sm:hover:shadow-purple-500/20">
                         <option value="">Select Industry</option>
                         <option value="technology">Technology</option>
                         <option value="finance">Finance</option>
@@ -343,8 +386,8 @@ const SettingsPage = () => {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">Company Size</label>
-                      <select value={orgSettings.company_size || ''} onChange={(e) => setOrgSettings({ ...orgSettings, company_size: e.target.value })} className="w-full px-4 py-3 bg-gray-950 border-2 border-purple-500/30 rounded-xl text-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all hover:border-purple-500/50 cursor-pointer shadow-lg shadow-purple-500/10 hover:shadow-purple-500/20">
+                      <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-2">Company Size</label>
+                      <select value={orgSettings.company_size || ''} onChange={(e) => setOrgSettings({ ...orgSettings, company_size: e.target.value })} className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-950 border-2 border-purple-500/30 rounded-xl text-white text-sm sm:text-base focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all hover:border-purple-500/50 cursor-pointer sm:shadow-lg sm:shadow-purple-500/10 sm:hover:shadow-purple-500/20">
                         <option value="">Select Company Size</option>
                         <option value="1-10">1-10 employees</option>
                         <option value="11-50">11-50 employees</option>
@@ -354,8 +397,8 @@ const SettingsPage = () => {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">Timezone</label>
-                      <select value={orgSettings.timezone} onChange={(e) => setOrgSettings({ ...orgSettings, timezone: e.target.value })} className="w-full px-4 py-3 bg-gray-950 border-2 border-purple-500/30 rounded-xl text-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all hover:border-purple-500/50 cursor-pointer shadow-lg shadow-purple-500/10 hover:shadow-purple-500/20">
+                      <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-2">Timezone</label>
+                      <select value={orgSettings.timezone} onChange={(e) => setOrgSettings({ ...orgSettings, timezone: e.target.value })} className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-950 border-2 border-purple-500/30 rounded-xl text-white text-sm sm:text-base focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all hover:border-purple-500/50 cursor-pointer sm:shadow-lg sm:shadow-purple-500/10 sm:hover:shadow-purple-500/20">
                         <option value="UTC">UTC</option>
                         <option value="America/New_York">Eastern Time (ET)</option>
                         <option value="America/Chicago">Central Time (CT)</option>
@@ -369,8 +412,8 @@ const SettingsPage = () => {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">Default Currency</label>
-                      <select value={orgSettings.default_currency} onChange={(e) => setOrgSettings({ ...orgSettings, default_currency: e.target.value })} className="w-full px-4 py-3 bg-gray-950 border-2 border-purple-500/30 rounded-xl text-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all hover:border-purple-500/50 cursor-pointer shadow-lg shadow-purple-500/10 hover:shadow-purple-500/20">
+                      <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-2">Default Currency</label>
+                      <select value={orgSettings.default_currency} onChange={(e) => setOrgSettings({ ...orgSettings, default_currency: e.target.value })} className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-950 border-2 border-purple-500/30 rounded-xl text-white text-sm sm:text-base focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all hover:border-purple-500/50 cursor-pointer sm:shadow-lg sm:shadow-purple-500/10 sm:hover:shadow-purple-500/20">
                         <option value="USD">USD - US Dollar</option>
                         <option value="EUR">EUR - Euro</option>
                         <option value="GBP">GBP - British Pound</option>
@@ -382,7 +425,7 @@ const SettingsPage = () => {
                     </div>
                   </div>
                   <div className="flex justify-end pt-6">
-                    <button onClick={saveOrganizationSettings} disabled={loading} className="px-8 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg hover:shadow-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 font-medium">
+                    <button onClick={saveOrganizationSettings} disabled={loading} className="w-full sm:w-auto px-6 sm:px-8 py-2 sm:py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-sm sm:text-base rounded-lg sm:hover:shadow-lg sm:hover:shadow-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 font-medium">
                       {loading ? 'Saving...' : 'Save Settings'}
                     </button>
                   </div>
@@ -390,40 +433,40 @@ const SettingsPage = () => {
               )}
 
               {activeTab === 'profile' && (
-                <div className="space-y-6">
+                <div className="space-y-6 max-w-4xl">
                   <div>
                     <h2 className="text-2xl font-bold text-white mb-2">User Profile</h2>
                     <p className="text-gray-400">Manage your personal information and password.</p>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mt-8">
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">Full Name</label>
-                      <input type="text" value={userProfile.full_name} onChange={(e) => setUserProfile({ ...userProfile, full_name: e.target.value })} className="w-full px-4 py-3 bg-gray-700/50 border border-purple-500/30 rounded-lg text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all" placeholder="Enter your full name" />
+                      <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-2">Full Name</label>
+                      <input type="text" value={userProfile.full_name} onChange={(e) => setUserProfile({ ...userProfile, full_name: e.target.value })} className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-700/50 border border-purple-500/30 rounded-lg text-white text-sm sm:text-base focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all" placeholder="Enter your full name" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
-                      <input type="email" value={userProfile.email} onChange={(e) => setUserProfile({ ...userProfile, email: e.target.value })} className="w-full px-4 py-3 bg-gray-700/50 border border-purple-500/30 rounded-lg text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all" placeholder="Enter your email" />
+                      <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-2">Email</label>
+                      <input type="email" value={userProfile.email} onChange={(e) => setUserProfile({ ...userProfile, email: e.target.value })} className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-700/50 border border-purple-500/30 rounded-lg text-white text-sm sm:text-base focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all" placeholder="Enter your email" />
                     </div>
                   </div>
                   <div className="flex justify-end pt-2">
-                    <button onClick={saveUserProfile} disabled={loading} className="px-8 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg hover:shadow-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 font-medium">
+                    <button onClick={saveUserProfile} disabled={loading} className="w-full sm:w-auto px-6 sm:px-8 py-2 sm:py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-sm sm:text-base rounded-lg sm:hover:shadow-lg sm:hover:shadow-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 font-medium">
                       {loading ? 'Saving...' : 'Update Profile'}
                     </button>
                   </div>
                   <div className="border-t border-purple-500/20 pt-8 mt-8">
                     <h3 className="text-xl font-bold text-white mb-4">Change Password</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                       <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">New Password</label>
-                        <input type="password" value={passwordData.new_password} onChange={(e) => setPasswordData({ ...passwordData, new_password: e.target.value })} className="w-full px-4 py-3 bg-gray-700/50 border border-purple-500/30 rounded-lg text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all" placeholder="Enter new password (min 6 characters)" />
+                        <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-2">New Password</label>
+                        <input type="password" value={passwordData.new_password} onChange={(e) => setPasswordData({ ...passwordData, new_password: e.target.value })} className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-700/50 border border-purple-500/30 rounded-lg text-white text-sm sm:text-base focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all" placeholder="Enter new password (min 6 characters)" />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">Confirm Password</label>
-                        <input type="password" value={passwordData.confirm_password} onChange={(e) => setPasswordData({ ...passwordData, confirm_password: e.target.value })} className="w-full px-4 py-3 bg-gray-700/50 border border-purple-500/30 rounded-lg text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all" placeholder="Confirm new password" />
+                        <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-2">Confirm Password</label>
+                        <input type="password" value={passwordData.confirm_password} onChange={(e) => setPasswordData({ ...passwordData, confirm_password: e.target.value })} className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-700/50 border border-purple-500/30 rounded-lg text-white text-sm sm:text-base focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all" placeholder="Confirm new password" />
                       </div>
                     </div>
                     <div className="flex justify-end pt-6">
-                      <button onClick={changePassword} disabled={loading || !passwordData.new_password} className="px-8 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:shadow-lg hover:shadow-green-500/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 font-medium">
+                      <button onClick={changePassword} disabled={loading || !passwordData.new_password} className="w-full sm:w-auto px-6 sm:px-8 py-2 sm:py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white text-sm sm:text-base rounded-lg sm:hover:shadow-lg sm:hover:shadow-green-500/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 font-medium">
                         {loading ? 'Changing...' : 'Change Password'}
                       </button>
                     </div>
@@ -432,63 +475,60 @@ const SettingsPage = () => {
               )}
 
               {activeTab === 'api-keys' && (
-                <div className="space-y-6">
-                  <div className="flex justify-between items-start">
+                <div className="space-y-6 w-full">
+                  <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                     <div>
                       <h2 className="text-2xl font-bold text-white mb-2">API Keys</h2>
                       <p className="text-gray-400">Manage API keys for external integrations and automations.</p>
                     </div>
                     <button 
-                      onClick={() => {
-                        console.log('Create button clicked');
-                        setShowCreateModal(true);
-                      }} 
-                      className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg hover:shadow-purple-500/50 transition-all duration-300 font-medium"
+                      onClick={handleCreateKeyClick}
+                      className="w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg hover:shadow-purple-500/50 transition-all duration-300 font-medium text-sm sm:text-base text-center"
                     >
                       + Create New Key
                     </button>
                   </div>
                   {apiKeyStats && (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-                      <div className="bg-gradient-to-br from-blue-600/20 to-blue-800/20 border border-blue-500/30 p-4 rounded-lg">
-                        <div className="text-2xl font-bold text-white">{apiKeyStats.total_keys}</div>
-                        <div className="text-sm text-gray-400">Total Keys</div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mt-6">
+                      <div className="bg-gradient-to-br from-blue-600/20 to-blue-800/20 border border-blue-500/30 p-3 sm:p-4 rounded-lg">
+                        <div className="text-xl sm:text-2xl font-bold text-white">{apiKeyStats.total_keys}</div>
+                        <div className="text-xs sm:text-sm text-gray-400">Total Keys</div>
                       </div>
-                      <div className="bg-gradient-to-br from-green-600/20 to-green-800/20 border border-green-500/30 p-4 rounded-lg">
-                        <div className="text-2xl font-bold text-white">{apiKeyStats.active_keys}</div>
-                        <div className="text-sm text-gray-400">Active</div>
+                      <div className="bg-gradient-to-br from-green-600/20 to-green-800/20 border border-green-500/30 p-3 sm:p-4 rounded-lg">
+                        <div className="text-xl sm:text-2xl font-bold text-white">{apiKeyStats.active_keys}</div>
+                        <div className="text-xs sm:text-sm text-gray-400">Active</div>
                       </div>
-                      <div className="bg-gradient-to-br from-yellow-600/20 to-yellow-800/20 border border-yellow-500/30 p-4 rounded-lg">
-                        <div className="text-2xl font-bold text-white">{apiKeyStats.inactive_keys}</div>
-                        <div className="text-sm text-gray-400">Revoked</div>
+                      <div className="bg-gradient-to-br from-yellow-600/20 to-yellow-800/20 border border-yellow-500/30 p-3 sm:p-4 rounded-lg">
+                        <div className="text-xl sm:text-2xl font-bold text-white">{apiKeyStats.inactive_keys}</div>
+                        <div className="text-xs sm:text-sm text-gray-400">Revoked</div>
                       </div>
-                      <div className="bg-gradient-to-br from-purple-600/20 to-purple-800/20 border border-purple-500/30 p-4 rounded-lg">
-                        <div className="text-2xl font-bold text-white">{apiKeyStats.recently_used}</div>
-                        <div className="text-sm text-gray-400">Recently Used</div>
+                      <div className="bg-gradient-to-br from-purple-600/20 to-purple-800/20 border border-purple-500/30 p-3 sm:p-4 rounded-lg">
+                        <div className="text-xl sm:text-2xl font-bold text-white">{apiKeyStats.recently_used}</div>
+                        <div className="text-xs sm:text-sm text-gray-400">Recently Used</div>
                       </div>
                     </div>
                   )}
-                  <div className="mt-6 overflow-x-auto">
-                    <table className="w-full">
+                  <div className="mt-6 overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+                    <table className="w-full min-w-[600px]">
                       <thead>
                         <tr className="border-b border-purple-500/20">
-                          <th className="text-left py-3 px-4 text-gray-400 font-medium text-sm">Key</th>
-                          <th className="text-left py-3 px-4 text-gray-400 font-medium text-sm">Name</th>
-                          <th className="text-left py-3 px-4 text-gray-400 font-medium text-sm">Scopes</th>
-                          <th className="text-left py-3 px-4 text-gray-400 font-medium text-sm">Last Used</th>
-                          <th className="text-left py-3 px-4 text-gray-400 font-medium text-sm">Status</th>
-                          <th className="text-right py-3 px-4 text-gray-400 font-medium text-sm">Actions</th>
+                          <th className="text-left py-3 px-2 sm:px-4 text-gray-400 font-medium text-xs sm:text-sm">Key</th>
+                          <th className="text-left py-3 px-2 sm:px-4 text-gray-400 font-medium text-xs sm:text-sm">Name</th>
+                          <th className="text-left py-3 px-2 sm:px-4 text-gray-400 font-medium text-xs sm:text-sm">Scopes</th>
+                          <th className="text-left py-3 px-2 sm:px-4 text-gray-400 font-medium text-xs sm:text-sm">Last Used</th>
+                          <th className="text-left py-3 px-2 sm:px-4 text-gray-400 font-medium text-xs sm:text-sm">Status</th>
+                          <th className="text-right py-3 px-2 sm:px-4 text-gray-400 font-medium text-xs sm:text-sm">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
                         {apiKeys.length === 0 ? (
-                          <tr><td colSpan="6" className="text-center py-8 text-gray-400">No API keys yet. Create one to get started!</td></tr>
+                          <tr><td colSpan="6" className="text-center py-8 text-gray-400 text-sm">No API keys yet. Create one to get started!</td></tr>
                         ) : (
                           apiKeys.map((key) => (
                             <tr key={key.id} className="border-b border-purple-500/10 hover:bg-gray-700/20">
-                              <td className="py-3 px-4 font-mono text-sm text-gray-300">{key.key_prefix}••••</td>
-                              <td className="py-3 px-4 text-white">{key.name}</td>
-                              <td className="py-3 px-4">
+                              <td className="py-3 px-2 sm:px-4 font-mono text-xs sm:text-sm text-gray-300">{key.key_prefix}••••</td>
+                              <td className="py-3 px-2 sm:px-4 text-white text-sm">{key.name}</td>
+                              <td className="py-3 px-2 sm:px-4">
                                 <div className="flex flex-wrap gap-1">
                                   {key.scopes.slice(0, 2).map((scope, idx) => (
                                     <span key={idx} className="px-2 py-1 bg-purple-500/20 text-purple-300 text-xs rounded">{scope}</span>
@@ -496,20 +536,20 @@ const SettingsPage = () => {
                                   {key.scopes.length > 2 && <span className="px-2 py-1 bg-gray-700 text-gray-300 text-xs rounded">+{key.scopes.length - 2}</span>}
                                 </div>
                               </td>
-                              <td className="py-3 px-4 text-gray-400 text-sm">{key.last_used_at ? new Date(key.last_used_at).toLocaleDateString() : 'Never'}</td>
-                              <td className="py-3 px-4">
+                              <td className="py-3 px-2 sm:px-4 text-gray-400 text-xs sm:text-sm">{key.last_used_at ? new Date(key.last_used_at).toLocaleDateString() : 'Never'}</td>
+                              <td className="py-3 px-2 sm:px-4">
                                 {key.is_active ? (
-                                  <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded">Active</span>
+                                  <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded whitespace-nowrap">Active</span>
                                 ) : (
-                                  <span className="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded">Revoked</span>
+                                  <span className="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded whitespace-nowrap">Revoked</span>
                                 )}
                               </td>
-                              <td className="py-3 px-4 text-right">
-                                <div className="flex justify-end gap-2">
+                              <td className="py-3 px-2 sm:px-4 text-right">
+                                <div className="flex justify-end gap-1 sm:gap-2">
                                   {key.is_active && (
-                                    <button onClick={() => handleRevokeKey(key.id)} className="px-3 py-1 bg-yellow-600/20 text-yellow-400 hover:bg-yellow-600/30 rounded text-sm transition-colors">Revoke</button>
+                                    <button onClick={() => handleRevokeKey(key.id)} className="px-2 sm:px-3 py-1 bg-yellow-600/20 text-yellow-400 hover:bg-yellow-600/30 rounded text-xs sm:text-sm transition-colors whitespace-nowrap">Revoke</button>
                                   )}
-                                  <button onClick={() => handleDeleteKey(key.id)} className="px-3 py-1 bg-red-600/20 text-red-400 hover:bg-red-600/30 rounded text-sm transition-colors">Delete</button>
+                                  <button onClick={() => handleDeleteKey(key.id)} className="px-2 sm:px-3 py-1 bg-red-600/20 text-red-400 hover:bg-red-600/30 rounded text-xs sm:text-sm transition-colors whitespace-nowrap">Delete</button>
                                 </div>
                               </td>
                             </tr>
@@ -522,45 +562,45 @@ const SettingsPage = () => {
               )}
 
               {activeTab === 'notifications' && (
-                <div className="space-y-6">
+                <div className="space-y-6 max-w-4xl">
                   <div>
-                    <h2 className="text-2xl font-bold text-white mb-2">Notification Preferences</h2>
-                    <p className="text-gray-400">Choose which notifications you want to receive.</p>
+                    <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">Notification Preferences</h2>
+                    <p className="text-sm sm:text-base text-gray-400">Choose which notifications you want to receive.</p>
                   </div>
                   <div className="space-y-4 mt-8">
-                    <div className="flex items-center justify-between p-6 bg-gray-700/30 border border-purple-500/20 rounded-lg hover:border-purple-500/40 transition-all">
-                      <div>
-                        <h3 className="font-medium text-white text-lg">Customer Health Alerts</h3>
-                        <p className="text-sm text-gray-400 mt-1">Get notified about customer health score changes</p>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 sm:p-6 bg-gray-700/30 border border-purple-500/20 rounded-lg hover:border-purple-500/40 transition-all">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-white text-base sm:text-lg">Customer Health Alerts</h3>
+                        <p className="text-xs sm:text-sm text-gray-400 mt-1">Get notified about customer health score changes</p>
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
+                      <label className="relative inline-flex items-center cursor-pointer shrink-0">
                         <input type="checkbox" checked={notifications.customer_health_alerts} onChange={(e) => setNotifications({ ...notifications, customer_health_alerts: e.target.checked })} className="sr-only peer" />
                         <div className="w-14 h-7 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-purple-600"></div>
                       </label>
                     </div>
-                    <div className="flex items-center justify-between p-6 bg-gray-700/30 border border-purple-500/20 rounded-lg hover:border-purple-500/40 transition-all">
-                      <div>
-                        <h3 className="font-medium text-white text-lg">High-Risk Churn Alerts</h3>
-                        <p className="text-sm text-gray-400 mt-1">Get notified when customers are at risk of churning</p>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 sm:p-6 bg-gray-700/30 border border-purple-500/20 rounded-lg hover:border-purple-500/40 transition-all">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-white text-base sm:text-lg">High-Risk Churn Alerts</h3>
+                        <p className="text-xs sm:text-sm text-gray-400 mt-1">Get notified when customers are at risk of churning</p>
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
+                      <label className="relative inline-flex items-center cursor-pointer shrink-0">
                         <input type="checkbox" checked={notifications.churn_risk_alerts} onChange={(e) => setNotifications({ ...notifications, churn_risk_alerts: e.target.checked })} className="sr-only peer" />
                         <div className="w-14 h-7 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-purple-600"></div>
                       </label>
                     </div>
-                    <div className="flex items-center justify-between p-6 bg-gray-700/30 border border-purple-500/20 rounded-lg hover:border-purple-500/40 transition-all">
-                      <div>
-                        <h3 className="font-medium text-white text-lg">Job Status Updates</h3>
-                        <p className="text-sm text-gray-400 mt-1">Get notified when jobs are assigned or completed</p>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 sm:p-6 bg-gray-700/30 border border-purple-500/20 rounded-lg hover:border-purple-500/40 transition-all">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-white text-base sm:text-lg">Job Status Updates</h3>
+                        <p className="text-xs sm:text-sm text-gray-400 mt-1">Get notified when jobs are assigned or completed</p>
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
+                      <label className="relative inline-flex items-center cursor-pointer shrink-0">
                         <input type="checkbox" checked={notifications.job_status_updates} onChange={(e) => setNotifications({ ...notifications, job_status_updates: e.target.checked })} className="sr-only peer" />
                         <div className="w-14 h-7 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-purple-600"></div>
                       </label>
                     </div>
                   </div>
                   <div className="flex justify-end pt-6">
-                    <button onClick={saveNotificationPreferences} disabled={loading} className="px-8 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg hover:shadow-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 font-medium">
+                    <button onClick={saveNotificationPreferences} disabled={loading} className="w-full sm:w-auto px-6 sm:px-8 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg hover:shadow-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 font-medium">
                       {loading ? 'Saving...' : 'Save Preferences'}
                     </button>
                   </div>
@@ -575,11 +615,11 @@ const SettingsPage = () => {
                   </div>
 
                   {/* Current Plan Card */}
-                  <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 border border-purple-500/30 p-8 rounded-xl">
-                    <div className="flex items-center justify-between mb-6">
-                      <div>
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-3xl font-bold text-white capitalize">{billingInfo.plan_type || 'Free'} Plan</h3>
+                  <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 border border-purple-500/30 p-4 sm:p-6 lg:p-8 rounded-xl">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4 mb-6">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
+                          <h3 className="text-2xl sm:text-3xl font-bold text-white capitalize">{billingInfo.plan_type || 'Free'} Plan</h3>
                           {billingInfo.plan_type === 'pro' && (
                             <span className="px-3 py-1 bg-purple-600 text-white text-sm font-semibold rounded-full">POPULAR</span>
                           )}
@@ -587,7 +627,7 @@ const SettingsPage = () => {
                             <span className="px-3 py-1 bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-sm font-semibold rounded-full">PREMIUM</span>
                           )}
                         </div>
-                        <p className="text-purple-300">
+                        <p className="text-purple-300 text-sm sm:text-base break-words">
                           {billingInfo.subscription_status === 'active' && billingInfo.current_period_end && 
                             `Renews on ${new Date(billingInfo.current_period_end).toLocaleDateString()}`
                           }
@@ -600,7 +640,7 @@ const SettingsPage = () => {
                           {!billingInfo.subscription_status && 'Active'}
                         </p>
                       </div>
-                      <div className="text-6xl">
+                      <div className="text-4xl sm:text-5xl lg:text-6xl shrink-0">
                         {billingInfo.plan_type === 'free' && '🆓'}
                         {billingInfo.plan_type === 'pro' && '💎'}
                         {billingInfo.plan_type === 'enterprise' && '👑'}
@@ -608,11 +648,11 @@ const SettingsPage = () => {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex gap-3">
+                    <div className="flex flex-col sm:flex-row gap-3">
                       {billingInfo.plan_type === 'free' && (
                         <button
                           onClick={() => window.location.href = '/pricing'}
-                          className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-purple-500/50 transition-all hover:scale-105"
+                          className="w-full sm:flex-1 px-4 sm:px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-purple-500/50 transition-all hover:scale-105 text-sm sm:text-base"
                         >
                           🚀 Upgrade Plan
                         </button>
@@ -628,7 +668,7 @@ const SettingsPage = () => {
                               alert('Failed to open billing portal');
                             }
                           }}
-                          className="flex-1 px-6 py-3 bg-gray-700 text-white rounded-lg font-semibold hover:bg-gray-600 transition-all"
+                          className="w-full sm:flex-1 px-4 sm:px-6 py-3 bg-gray-700 text-white rounded-lg font-semibold hover:bg-gray-600 transition-all text-sm sm:text-base"
                         >
                           ⚙️ Manage Subscription
                         </button>
@@ -638,17 +678,17 @@ const SettingsPage = () => {
 
                   {/* Usage & Limits */}
                   {billingInfo.limits && (
-                    <div className="bg-gray-800/50 border border-purple-500/20 p-6 rounded-xl">
-                      <h3 className="font-semibold text-white text-lg mb-4 flex items-center gap-2">
+                    <div className="bg-gray-800/50 border border-purple-500/20 p-4 sm:p-6 rounded-xl">
+                      <h3 className="font-semibold text-white text-base sm:text-lg mb-4 flex items-center gap-2">
                         <span>📊</span>
                         Usage & Limits
                       </h3>
                       <div className="space-y-4">
                         {/* Datasets */}
                         <div>
-                          <div className="flex justify-between items-center mb-2">
-                            <span className="text-gray-300">Datasets</span>
-                            <span className="font-medium text-white">
+                          <div className="flex justify-between items-center gap-2 mb-2">
+                            <span className="text-gray-300 text-sm sm:text-base">Datasets</span>
+                            <span className="font-medium text-white text-sm sm:text-base shrink-0">
                               {billingInfo.usage?.datasets || 0} / {billingInfo.limits.datasets === -1 ? '∞' : billingInfo.limits.datasets}
                             </span>
                           </div>
@@ -664,9 +704,9 @@ const SettingsPage = () => {
 
                         {/* Talent Profiles */}
                         <div>
-                          <div className="flex justify-between items-center mb-2">
-                            <span className="text-gray-300">Talent Profiles</span>
-                            <span className="font-medium text-white">
+                          <div className="flex justify-between items-center gap-2 mb-2">
+                            <span className="text-gray-300 text-sm sm:text-base">Talent Profiles</span>
+                            <span className="font-medium text-white text-sm sm:text-base shrink-0">
                               {billingInfo.usage?.talent_profiles || 0} / {billingInfo.limits.talent_profiles === -1 ? '∞' : billingInfo.limits.talent_profiles}
                             </span>
                           </div>
@@ -682,9 +722,9 @@ const SettingsPage = () => {
 
                         {/* Jobs */}
                         <div>
-                          <div className="flex justify-between items-center mb-2">
-                            <span className="text-gray-300">Jobs</span>
-                            <span className="font-medium text-white">
+                          <div className="flex justify-between items-center gap-2 mb-2">
+                            <span className="text-gray-300 text-sm sm:text-base">Jobs</span>
+                            <span className="font-medium text-white text-sm sm:text-base shrink-0">
                               {billingInfo.usage?.jobs || 0} / {billingInfo.limits.jobs === -1 ? '∞' : billingInfo.limits.jobs}
                             </span>
                           </div>
@@ -700,8 +740,8 @@ const SettingsPage = () => {
 
                         {/* Features */}
                         <div className="border-t border-gray-700 pt-4 mt-4">
-                          <h4 className="text-sm font-semibold text-gray-400 mb-3">Features</h4>
-                          <div className="grid grid-cols-2 gap-3">
+                          <h4 className="text-xs sm:text-sm font-semibold text-gray-400 mb-3">Features</h4>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div className="flex items-center gap-2">
                               {billingInfo.limits.can_export ? (
                                 <span className="text-green-400">✓</span>
@@ -726,8 +766,8 @@ const SettingsPage = () => {
 
                   {/* Billing History */}
                   {(billingInfo.plan_type === 'pro' || billingInfo.plan_type === 'enterprise') && (
-                    <div className="bg-gray-800/50 border border-purple-500/20 p-6 rounded-xl">
-                      <h3 className="font-semibold text-white text-lg mb-4 flex items-center gap-2">
+                    <div className="bg-gray-800/50 border border-purple-500/20 p-4 sm:p-6 rounded-xl">
+                      <h3 className="font-semibold text-white text-base sm:text-lg mb-4 flex items-center gap-2">
                         <span>📄</span>
                         Billing Information
                       </h3>
@@ -754,44 +794,98 @@ const SettingsPage = () => {
             </>
           )}
         </div>
-      </div>
 
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
-          <div className="bg-gray-800 border border-purple-500/30 rounded-xl p-8 max-w-2xl w-full mx-4 animate-slide-in">
-            <h3 className="text-2xl font-bold text-white mb-6">Create New API Key</h3>
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Key Name</label>
-                <input type="text" value={createForm.name} onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })} className="w-full px-4 py-3 bg-gray-700/50 border border-purple-500/30 rounded-lg text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent" placeholder="e.g., Production API Key" />
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fade-in overflow-y-auto">
+          <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-purple-500/40 rounded-2xl p-4 sm:p-6 max-w-2xl w-full my-8 shadow-2xl shadow-purple-500/20 animate-scale-in">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl flex items-center justify-center animate-pulse-slow">
+                <span className="text-xl sm:text-2xl">🔑</span>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-3">Permissions</label>
-                <div className="grid grid-cols-2 gap-3">
-                  {availableScopes.map((scope) => (
-                    <label key={scope.value} className="flex items-center gap-3 p-3 bg-gray-700/30 border border-purple-500/20 rounded-lg hover:border-purple-500/40 cursor-pointer transition-all">
-                      <input type="checkbox" checked={createForm.scopes.includes(scope.value)} onChange={() => toggleScope(scope.value)} className="w-4 h-4 text-purple-600 bg-gray-700 border-gray-600 rounded focus:ring-purple-500" />
-                      <span className="text-gray-300">{scope.label}</span>
+                <h3 className="text-xl sm:text-2xl font-bold text-white">Create New API Key</h3>
+                <p className="text-xs sm:text-sm text-gray-400 mt-0.5">Configure your new API key with custom permissions</p>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="group">
+                <label className="block text-xs sm:text-sm font-semibold text-gray-300 mb-1.5 flex items-center gap-2">
+                  <span>📝</span> Key Name
+                </label>
+                <input 
+                  type="text" 
+                  value={createForm.name} 
+                  onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })} 
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-950/50 border-2 border-purple-500/30 rounded-xl text-white text-sm sm:text-base placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-purple-500/50 transition-all duration-300 hover:border-purple-500/50" 
+                  placeholder="e.g., Production API Key" 
+                />
+              </div>
+              
+              <div>
+                <label className="block text-xs sm:text-sm font-semibold text-gray-300 mb-2 flex items-center gap-2">
+                  <span>🛡️</span> Permissions
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {availableScopes.map((scope, index) => (
+                    <label 
+                      key={scope.value} 
+                      className="relative flex items-center gap-2 sm:gap-3 p-3 bg-gray-800/50 border-2 border-purple-500/20 rounded-xl hover:border-purple-500/50 hover:bg-gray-700/50 cursor-pointer transition-all duration-300 group animate-slide-in-up"
+                      style={{ animationDelay: `${index * 50}ms` }}
+                    >
+                      <input 
+                        type="checkbox" 
+                        checked={createForm.scopes.includes(scope.value)} 
+                        onChange={() => toggleScope(scope.value)} 
+                        className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 bg-gray-900 border-2 border-gray-600 rounded focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition-all cursor-pointer" 
+                      />
+                      <span className="text-sm sm:text-base text-gray-200 font-medium group-hover:text-white transition-colors">{scope.label}</span>
+                      <div className="absolute inset-0 bg-purple-500/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
                     </label>
                   ))}
                 </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Expiration</label>
-                <select value={createForm.expires_in_days || ''} onChange={(e) => setCreateForm({ ...createForm, expires_in_days: e.target.value ? parseInt(e.target.value) : null })} className="w-full px-4 py-3 bg-gray-700/50 border border-purple-500/30 rounded-lg text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+              
+              <div className="group">
+                <label className="block text-xs sm:text-sm font-semibold text-gray-300 mb-1.5 flex items-center gap-2">
+                  <span>⏰</span> Expiration
+                </label>
+                <select 
+                  value={createForm.expires_in_days || ''} 
+                  onChange={(e) => setCreateForm({ ...createForm, expires_in_days: e.target.value ? parseInt(e.target.value) : null })} 
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-950/50 border-2 border-purple-500/30 rounded-xl text-white text-sm sm:text-base focus:ring-2 focus:ring-purple-500 focus:border-purple-500/50 transition-all duration-300 hover:border-purple-500/50 cursor-pointer"
+                >
                   <option value="">Never</option>
                   <option value="30">30 days</option>
                   <option value="90">90 days</option>
                   <option value="365">1 year</option>
                 </select>
               </div>
-              <div className="bg-yellow-500/10 border border-yellow-500/30 p-4 rounded-lg">
-                <p className="text-yellow-400 text-sm">⚠️ The API key will be shown only once. Make sure to copy it!</p>
+              
+              <div className="bg-gradient-to-r from-yellow-500/20 via-orange-500/20 to-yellow-500/20 border-2 border-yellow-500/40 p-3 rounded-xl animate-pulse-glow">
+                <div className="flex items-start gap-2">
+                  <span className="text-lg sm:text-xl">⚠️</span>
+                  <div>
+                    <p className="text-yellow-300 font-semibold text-xs sm:text-sm mb-0.5">Important Security Notice</p>
+                    <p className="text-yellow-200/90 text-xs">The API key will be shown only once. Make sure to copy and store it securely!</p>
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="flex gap-3 mt-8">
-              <button onClick={() => { setShowCreateModal(false); setCreateForm({ name: '', scopes: [], expires_in_days: null }); }} className="flex-1 px-6 py-3 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition-colors">Cancel</button>
-              <button onClick={handleCreateApiKey} className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg hover:shadow-purple-500/50 transition-all font-medium">Create API Key</button>
+            
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-4 sm:mt-6">
+              <button 
+                onClick={() => { setShowCreateModal(false); setCreateForm({ name: '', scopes: [], expires_in_days: null }); }} 
+                className="flex-1 px-4 sm:px-6 py-2 sm:py-3 bg-gray-700/50 text-gray-300 text-sm sm:text-base rounded-xl hover:bg-gray-600/50 hover:text-white border-2 border-gray-600/50 hover:border-gray-500 transition-all duration-300 font-medium"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleCreateApiKey} 
+                className="flex-1 px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-purple-600 via-purple-500 to-blue-600 text-white text-sm sm:text-base rounded-xl hover:shadow-xl hover:shadow-purple-500/50 hover:scale-105 transition-all duration-300 font-semibold animate-gradient"
+              >
+                ✨ Create API Key
+              </button>
             </div>
           </div>
         </div>
@@ -830,6 +924,13 @@ const SettingsPage = () => {
           </div>
         </div>
       )}
+
+      <UpgradeModal
+        show={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        resourceType="api_keys"
+        currentPlan={billingInfo?.plan_type || 'free'}
+      />
     </div>
   );
 };

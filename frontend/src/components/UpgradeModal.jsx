@@ -39,6 +39,13 @@ export default function UpgradeModal({ show, onClose, resourceType, currentPlan 
       free: 'No API access',
       pro: 'Limited API access',
       enterprise: 'Full API access'
+    },
+    api_keys: {
+      title: 'API Key Limit Reached',
+      message: 'You\'ve reached the maximum number of API keys for your plan.',
+      free: 'No API keys',
+      pro: '1 API key (read-only)',
+      enterprise: 'Unlimited API keys'
     }
   }
 
