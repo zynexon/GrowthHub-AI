@@ -14,12 +14,19 @@ def create_app(config_name='development'):
     # Initialize extensions
     init_extensions(app)
     
-    # Configure CORS
+    # Configure CORS - allow multiple origins for production
+    allowed_origins = app.config['FRONTEND_URL']
+    if isinstance(allowed_origins, str):
+        allowed_origins = [allowed_origins]
+    
     CORS(app, resources={
-        r"/api/*": {
-            "origins": app.config['FRONTEND_URL'],
-            "methods": ["GET", "POST", "PUT", "PATCH", "DELETE"],
-            "allow_headers": ["Content-Type", "Authorization", "X-Organization-Id"]
+        r"/*": {
+            "origins": allowed_origins,
+            "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+            "allow_headers": ["Content-Type", "Authorization", "X-Organization-Id"],
+            "expose_headers": ["Content-Type", "Authorization"],
+            "supports_credentials": True,
+            "max_age": 3600
         }
     })
     
