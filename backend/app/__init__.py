@@ -14,24 +14,9 @@ def create_app(config_name='development'):
     # Initialize extensions
     init_extensions(app)
     
-    # Configure CORS - handle multiple origins including Vercel preview URLs
-    def is_allowed_origin(origin):
-        allowed_origins = app.config['FRONTEND_URL']
-        if isinstance(allowed_origins, str):
-            allowed_origins = [allowed_origins]
-        
-        # Check exact matches
-        if origin in allowed_origins:
-            return True
-        
-        # Allow all Vercel preview/production URLs
-        if origin and ('.vercel.app' in origin or origin.startswith('http://localhost')):
-            return True
-        
-        return False
-    
+    # Configure CORS - allow Vercel domains and localhost
     CORS(app, 
-         origins=is_allowed_origin,
+         origins=['https://*.vercel.app', 'http://localhost:5173', 'http://localhost:3000'],
          methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
          allow_headers=["Content-Type", "Authorization", "X-Organization-Id"],
          expose_headers=["Content-Type", "Authorization"],
