@@ -14,21 +14,29 @@ def create_app(config_name='development'):
     # Initialize extensions
     init_extensions(app)
     
-    # Configure CORS - allow multiple origins for production
-    allowed_origins = app.config['FRONTEND_URL']
-    if isinstance(allowed_origins, str):
-        allowed_origins = [allowed_origins]
+    # Configure CORS - handle multiple origins including Vercel preview URLs
+    def is_allowed_origin(origin):
+        allowed_origins = app.config['FRONTEND_URL']
+        if isinstance(allowed_origins, str):
+            allowed_origins = [allowed_origins]
+        
+        # Check exact matches
+        if origin in allowed_origins:
+            return True
+        
+        # Allow all Vercel preview/production URLs
+        if origin and ('.vercel.app' in origin or origin.startswith('http://localhost')):
+            return True
+        
+        return False
     
-    CORS(app, resources={
-        r"/*": {
-            "origins": allowed_origins,
-            "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-            "allow_headers": ["Content-Type", "Authorization", "X-Organization-Id"],
-            "expose_headers": ["Content-Type", "Authorization"],
-            "supports_credentials": True,
-            "max_age": 3600
-        }
-    })
+    CORS(app, 
+         origins=is_allowed_origin,
+         methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+         allow_headers=["Content-Type", "Authorization", "X-Organization-Id"],
+         expose_headers=["Content-Type", "Authorization"],
+         supports_credentials=True,
+         max_age=3600)
     
     # Register blueprints
     from .auth.routes import auth_bp
