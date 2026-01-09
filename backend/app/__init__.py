@@ -14,13 +14,13 @@ def create_app(config_name='development'):
     # Initialize extensions
     init_extensions(app)
     
-    # Configure CORS - allow Vercel domains and localhost
+    # Configure CORS - allow all origins (can restrict later in production)
     CORS(app, 
-         origins=['https://*.vercel.app', 'http://localhost:5173', 'http://localhost:3000'],
+         resources={r"/*": {"origins": "*"}},
          methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
          allow_headers=["Content-Type", "Authorization", "X-Organization-Id"],
          expose_headers=["Content-Type", "Authorization"],
-         supports_credentials=True,
+         supports_credentials=False,
          max_age=3600)
     
     # Register blueprints
