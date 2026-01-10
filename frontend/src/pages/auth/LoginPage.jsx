@@ -101,27 +101,6 @@ export default function LoginPage() {
           <span className="relative z-10">{loading ? 'Signing in...' : 'Sign In'}</span>
           <div className="absolute inset-0 bg-gradient-to-r from-purple-700 to-blue-700 opacity-0 group-hover:opacity-100 transition-opacity"></div>
         </button>
-
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-700"></div>
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-gray-800/50 text-gray-400">Or</span>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={handleDemoMode}
-          className="group w-full px-6 py-3 bg-gradient-to-r from-gray-700 to-gray-600 text-white rounded-lg font-semibold hover:from-gray-600 hover:to-gray-500 transition-all shadow-lg shadow-gray-500/30 hover:scale-105 hover:shadow-gray-500/50 border border-gray-500/30 relative overflow-hidden"
-        >
-          <span className="relative z-10 flex items-center justify-center gap-2">
-            <span className="text-xl">🚀</span>
-            Try Demo Mode
-          </span>
-          <div className="absolute inset-0 bg-gradient-to-r from-gray-600 to-gray-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-        </button>
       </form>
 
       <div className="mt-8 text-center">
