@@ -46,6 +46,22 @@ export const revopsService = {
     return response.data
   },
 
+  async chatWithLeads(message, history = []) {
+    const response = await api.post('/revops/leads/chat', {
+      message,
+      history
+    })
+    return response.data
+  },
+
+  async chatWithCampaigns(message, history = []) {
+    const response = await api.post('/revops/campaigns/chat', {
+      message,
+      history
+    })
+    return response.data
+  },
+
   async clearCampaigns() {
     const response = await api.delete('/revops/campaigns/clear')
     return response.data

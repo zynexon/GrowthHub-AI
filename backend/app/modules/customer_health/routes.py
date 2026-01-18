@@ -90,3 +90,27 @@ def analyze_customers():
         import traceback
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
+
+
+@customer_health_bp.route('/customers/chat', methods=['POST'])
+@require_auth
+@require_role('org_owner', 'org_member')
+def chat_with_customers():
+    """Chat with AI about customers data."""
+    org_id = request.organization_id
+    user_id = request.user.id
+    data = request.get_json()
+    message = data.get('message', '')
+    conversation_history = data.get('history', [])
+    
+    if not message:
+        return jsonify({'error': 'Message is required'}), 400
+    
+    try:
+        result = customer_health_service.chat_about_customers(org_id, user_id, message, conversation_history)
+        return jsonify(result), 200
+    except Exception as e:
+        print(f"[chat_with_customers] Error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500

@@ -79,6 +79,30 @@ def analyze_leads():
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
+
+@revops_bp.route('/leads/chat', methods=['POST'])
+@require_auth
+@require_role('org_owner', 'org_member')
+def chat_with_leads():
+    """Chat with AI about leads data."""
+    org_id = request.organization_id
+    user_id = request.user.id  # Get user ID from authenticated user
+    data = request.get_json()
+    message = data.get('message', '')
+    conversation_history = data.get('history', [])
+    
+    if not message:
+        return jsonify({'error': 'Message is required'}), 400
+    
+    try:
+        result = revops_service.chat_about_leads(org_id, user_id, message, conversation_history)
+        return jsonify(result), 200
+    except Exception as e:
+        print(f"[chat_with_leads] Error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
 @revops_bp.route('/leads/<lead_id>', methods=['PUT'])
 @require_auth
 @require_role('org_owner', 'org_member')
@@ -164,6 +188,30 @@ def analyze_campaigns():
         return jsonify(result), 200
     except Exception as e:
         print(f"[analyze_campaigns] Error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+@revops_bp.route('/campaigns/chat', methods=['POST'])
+@require_auth
+@require_role('org_owner', 'org_member')
+def chat_with_campaigns():
+    """Chat with AI about campaigns data."""
+    org_id = request.organization_id
+    user_id = request.user.id
+    data = request.get_json()
+    message = data.get('message', '')
+    conversation_history = data.get('history', [])
+    
+    if not message:
+        return jsonify({'error': 'Message is required'}), 400
+    
+    try:
+        result = revops_service.chat_about_campaigns(org_id, user_id, message, conversation_history)
+        return jsonify(result), 200
+    except Exception as e:
+        print(f"[chat_with_campaigns] Error: {str(e)}")
         import traceback
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500

@@ -39,5 +39,13 @@ export const customerHealthService = {
   analyzeCustomers: async () => {
     const response = await api.get('/customer-health/customers/analyze')
     return response.data
+  },
+
+  chatWithCustomers: async (message, history = []) => {
+    const response = await api.post('/customer-health/customers/chat', {
+      message,
+      history
+    })
+    return response.data
   }
 }

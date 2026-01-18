@@ -149,6 +149,88 @@ class CustomerHealthService:
                 .execute()
         
         return {
+            'message': f'Successfully uploaded {len(new_customers)} customers',
+            'new_count': len(new_customers),
+            'duplicate_count': duplicates
+        }
+    
+    def chat_about_customers(self, org_id: str, user_id: str, message: str, conversation_history: list = None):
+        """Chat with AI about customers data with full access to customer details."""
+        from app.ai.gemini_client import get_gemini_client
+        
+        # Get customers data for context
+        response = self.admin.table('customers')\
+            .select('*')\
+            .eq('organization_id', org_id)\
+            .execute()
+        
+        customers = response.data
+        
+        # Calculate statistics and health scores for context
+        total_customers = len(customers)
+        enriched_customers = []
+        
+        healthy_count = 0
+        at_risk_count = 0
+        expansion_count = 0
+        total_mrr = 0
+        
+        for customer in customers:
+            score, breakdown = calculate_health_score(customer)
+            status = get_health_status(score)
+            risk_level, risk_days, risk_reasons = predict_churn_risk(customer, score)
+            expansion = detect_expansion_signals(customer, score)
+            
+            if status == 'healthy':
+                healthy_count += 1
+            elif status == 'at_risk':
+                at_risk_count += 1
+            
+            if expansion['has_opportunity']:
+                expansion_count += 1
+            
+            total_mrr += float(customer.get('mrr', 0))
+            
+            enriched_customers.append({
+                'company': customer.get('company'),
+                'email': customer.get('email'),
+                'plan': customer.get('plan'),
+                'mrr': float(customer.get('mrr', 0)),
+                'health_score': score,
+                'health_status': status,
+                'churn_risk_level': risk_level,
+                'expansion_opportunity': expansion['has_opportunity'],
+                'last_active': customer.get('last_active')
+            })
+        
+        # Prepare context for AI
+        data_context = {
+            'total_customers': total_customers,
+            'healthy_count': healthy_count,
+            'at_risk_count': at_risk_count,
+            'expansion_count': expansion_count,
+            'total_mrr': total_mrr,
+            'avg_health_score': sum(c['health_score'] for c in enriched_customers) / total_customers if total_customers > 0 else 0,
+            'all_customers': enriched_customers
+        }
+        
+        # Get AI response
+        try:
+            gemini = get_gemini_client()
+            result = gemini.chat_with_data(user_id, message, data_context, conversation_history, data_type='customers')
+            
+            return {
+                'response': result.get('response', 'I apologize, I could not process that request.'),
+                'success': result.get('success', False)
+            }
+        except Exception as e:
+            print(f"Chat error: {e}")
+            return {
+                'response': f"I'm having trouble processing your question right now. Error: {str(e)}",
+                'success': False
+            }
+        
+        return {
             'message': f'{len(new_customers)} customers uploaded, {duplicates} duplicates skipped',
             'uploaded': len(new_customers),
             'duplicates': duplicates

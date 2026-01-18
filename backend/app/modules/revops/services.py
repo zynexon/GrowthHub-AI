@@ -491,6 +491,155 @@ Each should be a concise sentence (max 100 characters).
             'recommendations': recommendations[:4]  # Limit to 4
         }
 
+    def chat_about_leads(self, org_id: str, user_id: str, message: str, conversation_history: list = None):
+        """Chat with AI about leads data with full access to lead details."""
+        from app.ai.gemini_client import get_gemini_client
+        
+        # Get leads data for context
+        response = self.admin.table('leads')\
+            .select('*')\
+            .eq('organization_id', org_id)\
+            .order('score', desc=True)\
+            .execute()
+        
+        leads = response.data
+        
+        # Calculate statistics for context
+        total_leads = len(leads)
+        avg_score = sum(l.get('score', 0) for l in leads) / total_leads if total_leads > 0 else 0
+        hot_leads = len([l for l in leads if l.get('score', 0) >= 80])
+        warm_leads = len([l for l in leads if 50 <= l.get('score', 0) < 80])
+        cold_leads = len([l for l in leads if l.get('score', 0) < 50])
+        
+        # Get top industries/sources
+        source_counts = {}
+        status_counts = {}
+        for lead in leads:
+            source = lead.get('source', 'unknown')
+            status = lead.get('status', 'unknown')
+            source_counts[source] = source_counts.get(source, 0) + 1
+            status_counts[status] = status_counts.get(status, 0) + 1
+        top_sources = sorted(source_counts.items(), key=lambda x: x[1], reverse=True)
+        
+        # Format detailed lead data for AI
+        leads_details = []
+        for lead in leads:
+            leads_details.append({
+                'name': lead.get('name'),
+                'email': lead.get('email'),
+                'company': lead.get('company'),
+                'score': lead.get('score'),
+                'temperature': lead.get('temperature'),
+                'source': lead.get('source'),
+                'status': lead.get('status'),
+                'engagement_level': lead.get('engagement_level')
+            })
+        
+        # Build comprehensive data context
+        data_context = {
+            'total_leads': total_leads,
+            'avg_score': avg_score,
+            'hot_leads': hot_leads,
+            'warm_leads': warm_leads,
+            'cold_leads': cold_leads,
+            'top_sources': [src[0] for src in top_sources],
+            'status_breakdown': status_counts,
+            'trends': f"{hot_leads} high-priority leads need immediate attention",
+            'all_leads': leads_details  # Full access to all lead details
+        }
+        
+        # Get AI response
+        try:
+            gemini = get_gemini_client()
+            result = gemini.chat_with_data(user_id, message, data_context, conversation_history)
+            
+            return {
+                'response': result.get('response', 'I apologize, I could not process that request.'),
+                'success': result.get('success', False)
+            }
+        except Exception as e:
+            print(f"Chat error: {e}")
+            return {
+                'response': f"I'm having trouble processing your question right now. Error: {str(e)}",
+                'success': False
+            }
+
+    def chat_about_campaigns(self, org_id: str, user_id: str, message: str, conversation_history: list = None):
+        """Chat with AI about campaigns data with full access to campaign details."""
+        from app.ai.gemini_client import get_gemini_client
+        
+        # Get campaigns data for context
+        response = self.admin.table('campaigns')\
+            .select('*')\
+            .eq('organization_id', org_id)\
+            .order('roi', desc=True)\
+            .execute()
+        
+        campaigns = response.data
+        
+        # Calculate statistics for context
+        total_campaigns = len(campaigns)
+        total_spend = sum(Decimal(str(c.get('spend', 0))) for c in campaigns)
+        total_revenue = sum(Decimal(str(c.get('revenue', 0))) for c in campaigns)
+        avg_roi = sum(Decimal(str(c.get('roi', 0))) for c in campaigns) / total_campaigns if total_campaigns > 0 else Decimal('0')
+        
+        # Count by performance
+        performance_counts = {}
+        for campaign in campaigns:
+            roi = Decimal(str(campaign.get('roi', 0)))
+            performance = get_performance_indicator(roi)
+            performance_counts[performance] = performance_counts.get(performance, 0) + 1
+        
+        # Count by channel
+        channel_counts = {}
+        for campaign in campaigns:
+            channel = campaign.get('channel', 'unknown')
+            channel_counts[channel] = channel_counts.get(channel, 0) + 1
+        
+        # Format detailed campaign data for AI
+        campaigns_details = []
+        for campaign in campaigns:
+            roi = Decimal(str(campaign.get('roi', 0)))
+            campaigns_details.append({
+                'name': campaign.get('name'),
+                'channel': campaign.get('channel'),
+                'period': campaign.get('period'),
+                'spend': float(campaign.get('spend', 0)),
+                'revenue': float(campaign.get('revenue', 0)),
+                'roi': float(roi),
+                'roi_percentage': get_roi_percentage(roi),
+                'performance': get_performance_indicator(roi),
+                'lead_count': campaign.get('lead_count', 0),
+                'conversion_count': campaign.get('conversion_count', 0)
+            })
+        
+        # Build comprehensive data context
+        data_context = {
+            'total_campaigns': total_campaigns,
+            'total_spend': float(total_spend),
+            'total_revenue': float(total_revenue),
+            'avg_roi': float(avg_roi),
+            'avg_roi_percentage': get_roi_percentage(avg_roi),
+            'performance_counts': performance_counts,
+            'channel_counts': channel_counts,
+            'all_campaigns': campaigns_details  # Full access to all campaign details
+        }
+        
+        # Get AI response
+        try:
+            gemini = get_gemini_client()
+            result = gemini.chat_with_data(user_id, message, data_context, conversation_history, data_type='campaigns')
+            
+            return {
+                'response': result.get('response', 'I apologize, I could not process that request.'),
+                'success': result.get('success', False)
+            }
+        except Exception as e:
+            print(f"Chat error: {e}")
+            return {
+                'response': f"I'm having trouble processing your question right now. Error: {str(e)}",
+                'success': False
+            }
 
     def analyze_campaigns_with_ai(self, org_id: str):
         """Analyze campaigns data and provide AI-powered insights."""

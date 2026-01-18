@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { customerHealthService } from '../../services/customer-health.service'
 
@@ -7,34 +7,44 @@ export default function CustomersPage() {
   const [uploadingFile, setUploadingFile] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [analyzing, setAnalyzing] = useState(false)
-  const [aiSummary, setAiSummary] = useState(null)
-  const [loadingAnalysis, setLoadingAnalysis] = useState(false)
   const [showFormatInfo, setShowFormatInfo] = useState(false)
+  const [chatMessages, setChatMessages] = useState([])
+  const [chatInput, setChatInput] = useState('')
+  const [chatLoading, setChatLoading] = useState(false)
+  const chatEndRef = useRef(null)
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['customers', filter],
     queryFn: () => customerHealthService.getCustomers(filter),
   })
 
-  // Fetch AI analysis when customers data is available
+  // Auto-scroll to latest message
   useEffect(() => {
-    const fetchAnalysis = async () => {
-      if (data?.customers && data.customers.length > 0 && !aiSummary && !loadingAnalysis && !filter) {
-        try {
-          console.log('[CustomersPage] Auto-fetching AI analysis...')
-          setLoadingAnalysis(true)
-          const summary = await customerHealthService.analyzeCustomers()
-          console.log('[CustomersPage] AI analysis loaded:', summary)
-          setAiSummary(summary)
-        } catch (error) {
-          console.error('[CustomersPage] Failed to fetch AI analysis:', error)
-        } finally {
-          setLoadingAnalysis(false)
-        }
-      }
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [chatMessages])
+
+  const handleSendMessage = async (e) => {
+    e.preventDefault()
+    if (!chatInput.trim() || chatLoading) return
+
+    const userMessage = chatInput.trim()
+    setChatInput('')
+    setChatLoading(true)
+
+    // Add user message
+    const newMessages = [...chatMessages, { role: 'user', content: userMessage }]
+    setChatMessages(newMessages)
+
+    try {
+      const response = await customerHealthService.chatWithCustomers(userMessage, newMessages)
+      setChatMessages([...newMessages, { role: 'assistant', content: response.response }])
+    } catch (error) {
+      console.error('Chat error:', error)
+      setChatMessages([...newMessages, { role: 'assistant', content: 'Sorry, I encountered an error. Please try again.' }])
+    } finally {
+      setChatLoading(false)
     }
-    fetchAnalysis()
-  }, [data?.customers, filter])
+  }
 
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0]
@@ -43,7 +53,6 @@ export default function CustomersPage() {
     setUploadingFile(true)
     setUploadProgress(10)
     setAnalyzing(false)
-    setAiSummary(null)
     
     try {
       // Simulate upload progress
@@ -57,19 +66,6 @@ export default function CustomersPage() {
       // Refetch customers data
       await refetch()
       setUploadProgress(80)
-      
-      // Get AI analysis
-      try {
-        console.log('[CustomersPage] Fetching AI analysis...')
-        setLoadingAnalysis(true)
-        const summary = await customerHealthService.analyzeCustomers()
-        console.log('[CustomersPage] AI analysis response:', summary)
-        setAiSummary(summary)
-      } catch (error) {
-        console.error('[CustomersPage] AI analysis failed:', error)
-      } finally {
-        setLoadingAnalysis(false)
-      }
       
       setUploadProgress(100)
       setAnalyzing(false)
@@ -96,7 +92,7 @@ export default function CustomersPage() {
 
     try {
       await customerHealthService.clearCustomers()
-      setAiSummary(null)
+      setChatMessages([])
       refetch()
       alert('All customers cleared successfully!')
     } catch (error) {
@@ -307,90 +303,141 @@ export default function CustomersPage() {
             </div>
           </div>
 
-          {/* Right: AI Summary (1 column) */}
+          {/* Right: AI Chatbot (1 column) */}
           <div className="lg:col-span-1">
             <div className="sticky top-6">
-              <div className="bg-gradient-to-br from-purple-900/20 to-blue-900/20 backdrop-blur-lg rounded-2xl border border-purple-500/30 overflow-hidden">
-                <div className="p-6 border-b border-purple-500/20 bg-purple-900/20">
-                  <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                    <span className="text-2xl">🤖</span>
-                    AI Analysis
-                  </h3>
-                  <p className="text-sm text-gray-400 mt-1">Insights from customer health data</p>
+              <div className="bg-gradient-to-br from-purple-900/30 via-blue-900/20 to-indigo-900/30 backdrop-blur-xl rounded-2xl border-2 border-purple-500/30 overflow-hidden flex flex-col shadow-2xl shadow-purple-500/10" style={{height: '600px'}}>
+                {/* Header with gradient */}
+                <div className="p-6 border-b border-purple-500/30 bg-gradient-to-r from-purple-900/40 to-blue-900/40 backdrop-blur-sm">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center shadow-lg">
+                      <span className="text-2xl">🤖</span>
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-white">AI Assistant</h3>
+                      <div className="flex items-center gap-2 mt-1">
+                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                        <p className="text-xs text-green-400 font-medium">Online</p>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-300 mt-2">Ask me anything about customer health</p>
                 </div>
 
-                {loadingAnalysis ? (
-                  <div className="p-12 text-center">
-                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-purple-500 border-t-transparent mb-4"></div>
-                    <p className="text-gray-300 font-medium">Analyzing with AI...</p>
-                    <p className="text-sm text-gray-500 mt-2">This may take a few seconds</p>
-                  </div>
-                ) : aiSummary ? (
-                  <div className="p-6 space-y-4">
-                    {/* Total Customers */}
-                    <div className="bg-gray-800/30 rounded-lg p-4 border border-purple-500/20">
-                      <div className="text-sm text-gray-400 mb-1">Total Customers</div>
-                      <div className="text-3xl font-bold text-white">{aiSummary.total_customers}</div>
+                {/* Chat Messages */}
+                <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-gradient-to-b from-gray-900/20 to-gray-900/40">
+                  {chatMessages.length === 0 ? (
+                    <div className="text-center py-8 animate-fade-in">
+                      <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-purple-500/20 to-blue-500/20 flex items-center justify-center backdrop-blur-sm border border-purple-500/30">
+                        <span className="text-5xl">💬</span>
+                      </div>
+                      <h4 className="text-lg font-semibold text-white mb-2">Start a conversation</h4>
+                      <p className="text-sm text-gray-400 mb-4">Ask about health scores, churn risk, or expansions</p>
+                      
+                      <div className="space-y-2 mt-6">
+                        <button 
+                          onClick={() => setChatInput("Which customers are at risk of churning?")}
+                          className="block w-full text-left px-4 py-3 bg-gradient-to-r from-gray-800/50 to-gray-800/30 hover:from-purple-600/20 hover:to-blue-600/20 rounded-xl text-sm text-gray-300 transition-all duration-300 border border-gray-700/50 hover:border-purple-500/50 group"
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="text-xl group-hover:scale-110 transition-transform">⚠️</span>
+                            <span>Which customers are at risk of churning?</span>
+                          </div>
+                        </button>
+                        <button 
+                          onClick={() => setChatInput("Show me customers with expansion opportunities")}
+                          className="block w-full text-left px-4 py-3 bg-gradient-to-r from-gray-800/50 to-gray-800/30 hover:from-purple-600/20 hover:to-blue-600/20 rounded-xl text-sm text-gray-300 transition-all duration-300 border border-gray-700/50 hover:border-purple-500/50 group"
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="text-xl group-hover:scale-110 transition-transform">📈</span>
+                            <span>Show me customers with expansion opportunities</span>
+                          </div>
+                        </button>
+                        <button 
+                          onClick={() => setChatInput("What's our average customer health score?")}
+                          className="block w-full text-left px-4 py-3 bg-gradient-to-r from-gray-800/50 to-gray-800/30 hover:from-purple-600/20 hover:to-blue-600/20 rounded-xl text-sm text-gray-300 transition-all duration-300 border border-gray-700/50 hover:border-purple-500/50 group"
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="text-xl group-hover:scale-110 transition-transform">💯</span>
+                            <span>What's our average customer health score?</span>
+                          </div>
+                        </button>
+                      </div>
                     </div>
-
-                    {/* Health Distribution */}
-                    {aiSummary.health_distribution && (
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-semibold text-gray-400">Health Distribution</h4>
-                        <div className="grid grid-cols-1 gap-2">
-                          <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3">
-                            <div className="text-green-400 text-xs mb-1">🟢 Healthy</div>
-                            <div className="text-2xl font-bold text-white">{aiSummary.health_distribution.healthy || 0}</div>
-                          </div>
-                          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
-                            <div className="text-yellow-400 text-xs mb-1">🟡 Watch</div>
-                            <div className="text-2xl font-bold text-white">{aiSummary.health_distribution.watch || 0}</div>
-                          </div>
-                          <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
-                            <div className="text-red-400 text-xs mb-1">🔴 At Risk</div>
-                            <div className="text-2xl font-bold text-white">{aiSummary.health_distribution.at_risk || 0}</div>
+                  ) : (
+                    <>
+                      {chatMessages.map((msg, idx) => (
+                        <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}>
+                          <div className={`max-w-[85%] rounded-2xl px-4 py-3 shadow-lg ${
+                            msg.role === 'user' 
+                              ? 'bg-gradient-to-br from-blue-600 to-purple-600 text-white' 
+                              : 'bg-gradient-to-br from-gray-800/80 to-gray-800/60 text-gray-100 border border-purple-500/30 backdrop-blur-sm'
+                          }`}>
+                            {msg.role === 'assistant' && (
+                              <div className="flex items-center gap-2 mb-2 pb-2 border-b border-purple-500/20">
+                                <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
+                                  <span className="text-xs">🤖</span>
+                                </div>
+                                <span className="text-xs font-semibold text-purple-300">AI Assistant</span>
+                              </div>
+                            )}
+                            <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
                           </div>
                         </div>
-                      </div>
-                    )}
+                      ))}
+                      {chatLoading && (
+                        <div className="flex justify-start animate-fade-in">
+                          <div className="bg-gradient-to-br from-gray-800/80 to-gray-800/60 rounded-2xl px-4 py-3 border border-purple-500/30 backdrop-blur-sm shadow-lg">
+                            <div className="flex items-center gap-2 mb-2 pb-2 border-b border-purple-500/20">
+                              <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
+                                <span className="text-xs">🤖</span>
+                              </div>
+                              <span className="text-xs font-semibold text-purple-300">AI Assistant</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{animationDelay: '0ms'}}></div>
+                              <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '150ms'}}></div>
+                              <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{animationDelay: '300ms'}}></div>
+                              <span className="text-xs text-gray-400 ml-2">Thinking...</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      <div ref={chatEndRef} />
+                    </>
+                  )}
+                </div>
 
-                    {/* Key Insights */}
-                    {aiSummary.insights && aiSummary.insights.length > 0 && (
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-semibold text-gray-400">💡 Key Insights</h4>
-                        <ul className="space-y-2">
-                          {aiSummary.insights.map((insight, idx) => (
-                            <li key={idx} className="text-sm text-gray-300 flex items-start gap-2 bg-gray-800/30 p-3 rounded-lg border border-gray-700">
-                              <span className="text-purple-400 mt-0.5">•</span>
-                              <span>{insight}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {/* Recommendations */}
-                    {aiSummary.recommendations && aiSummary.recommendations.length > 0 && (
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-semibold text-gray-400">🎯 Recommendations</h4>
-                        <ul className="space-y-2">
-                          {aiSummary.recommendations.map((rec, idx) => (
-                            <li key={idx} className="text-sm text-gray-300 flex items-start gap-2 bg-green-500/5 p-3 rounded-lg border border-green-500/20">
-                              <span className="text-green-400 mt-0.5">✓</span>
-                              <span>{rec}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                {/* Chat Input */}
+                <form onSubmit={handleSendMessage} className="p-4 border-t border-purple-500/30 bg-gradient-to-r from-gray-900/60 to-gray-900/40 backdrop-blur-sm">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value)}
+                      placeholder="Ask about your customers..."
+                      disabled={chatLoading || !data?.customers || data.customers.length === 0}
+                      className="flex-1 px-4 py-3 bg-gray-800/60 border border-purple-500/30 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all backdrop-blur-sm"
+                    />
+                    <button
+                      type="submit"
+                      disabled={chatLoading || !chatInput.trim() || !data?.customers || data.customers.length === 0}
+                      className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-purple-500/50 hover:scale-105 active:scale-95"
+                    >
+                      {chatLoading ? (
+                        <span className="inline-block animate-spin">⏳</span>
+                      ) : (
+                        <span>Send</span>
+                      )}
+                    </button>
                   </div>
-                ) : (
-                  <div className="p-12 text-center">
-                    <div className="text-6xl mb-4 opacity-20">🤖</div>
-                    <p className="text-gray-400">Upload customers to see AI-powered insights</p>
-                    <p className="text-sm text-gray-500 mt-2">Analysis includes health trends, churn risk, and expansion opportunities</p>
-                  </div>
-                )}
+                  {(!data?.customers || data.customers.length === 0) && (
+                    <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
+                      <span>💡</span>
+                      <span>Upload customers data to start chatting with AI</span>
+                    </p>
+                  )}
+                </form>
               </div>
             </div>
           </div>
