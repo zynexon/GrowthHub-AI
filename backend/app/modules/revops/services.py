@@ -389,5 +389,238 @@ class RevOpsService:
             'top_campaigns': top_campaigns
         }
 
+    def analyze_leads_with_ai(self, org_id: str):
+        """Analyze leads using Gemini AI to generate insights and recommendations."""
+        from app.ai.gemini_client import get_gemini_client
+        
+        # Get all leads
+        response = self.admin.table('leads')\
+            .select('*')\
+            .eq('organization_id', org_id)\
+            .execute()
+        
+        leads = response.data
+        
+        if not leads:
+            return {
+                'total_leads': 0,
+                'score_distribution': {'hot': 0, 'warm': 0, 'cold': 0},
+                'insights': ['No leads data available yet. Upload leads to get AI-powered insights.'],
+                'recommendations': []
+            }
+        
+        # Calculate basic stats
+        total_leads = len(leads)
+        score_distribution = {
+            'hot': len([l for l in leads if l.get('score', 0) >= 80]),
+            'warm': len([l for l in leads if 50 <= l.get('score', 0) < 80]),
+            'cold': len([l for l in leads if l.get('score', 0) < 50])
+        }
+        
+        # Prepare data summary for AI
+        status_counts = {}
+        source_counts = {}
+        engagement_counts = {}
+        
+        for lead in leads:
+            status = lead.get('status', 'unknown')
+            source = lead.get('source', 'unknown')
+            engagement = lead.get('engagement_level', 'unknown')
+            
+            status_counts[status] = status_counts.get(status, 0) + 1
+            source_counts[source] = source_counts.get(source, 0) + 1
+            engagement_counts[engagement] = engagement_counts.get(engagement, 0) + 1
+        
+        # Create prompt for Gemini
+        prompt = f"""Analyze this leads data and provide actionable insights and recommendations:
+
+Total Leads: {total_leads}
+Score Distribution: {score_distribution['hot']} hot, {score_distribution['warm']} warm, {score_distribution['cold']} cold
+
+Status Breakdown: {status_counts}
+Source Breakdown: {source_counts}
+Engagement Breakdown: {engagement_counts}
+
+Provide:
+1. 3-4 key insights about the lead quality and patterns
+2. 3-4 actionable recommendations to improve lead conversion
+
+Format your response as JSON with two arrays: "insights" and "recommendations".
+Each should be a concise sentence (max 100 characters).
+"""
+        
+        try:
+            # Get AI analysis
+            gemini = get_gemini_client()
+            ai_response = gemini.generate_text(prompt)
+            
+            # Try to parse JSON response
+            import json
+            import re
+            
+            # Extract JSON from response (might be wrapped in markdown)
+            json_match = re.search(r'\{[\s\S]*\}', ai_response)
+            if json_match:
+                ai_data = json.loads(json_match.group())
+                insights = ai_data.get('insights', [])
+                recommendations = ai_data.get('recommendations', [])
+            else:
+                # Fallback: split by lines
+                lines = [line.strip() for line in ai_response.split('\n') if line.strip()]
+                insights = lines[:4]
+                recommendations = lines[4:8] if len(lines) > 4 else []
+        
+        except Exception as e:
+            print(f"AI analysis error: {e}")
+            # Fallback to rule-based insights
+            insights = [
+                f"You have {total_leads} leads with {score_distribution['hot']} hot prospects",
+                f"Top source: {max(source_counts, key=source_counts.get)} ({source_counts[max(source_counts, key=source_counts.get)]} leads)",
+                f"{status_counts.get('new', 0)} leads are waiting for first contact"
+            ]
+            recommendations = [
+                "Prioritize contacting hot leads (score 80+) first",
+                f"Focus on {max(source_counts, key=source_counts.get)} channel - it's your best performer",
+                "Engage with warm leads to move them to hot status"
+            ]
+        
+        return {
+            'total_leads': total_leads,
+            'score_distribution': score_distribution,
+            'insights': insights[:4],  # Limit to 4
+            'recommendations': recommendations[:4]  # Limit to 4
+        }
+
+
+    def analyze_campaigns_with_ai(self, org_id: str):
+        """Analyze campaigns data and provide AI-powered insights."""
+        from app.ai.gemini_client import get_gemini_client
+        
+        # Get all campaigns
+        campaigns_response = self.admin.table('campaigns')\
+            .select('*')\
+            .eq('organization_id', org_id)\
+            .execute()
+        
+        campaigns = campaigns_response.data
+        total_campaigns = len(campaigns)
+        
+        if total_campaigns == 0:
+            return {
+                'total_campaigns': 0,
+                'performance_distribution': {'excellent': 0, 'good': 0, 'break_even': 0, 'loss': 0},
+                'insights': ['No campaigns data available yet'],
+                'recommendations': ['Upload campaign data to get AI-powered insights']
+            }
+        
+        # Calculate performance distribution
+        performance_distribution = {'excellent': 0, 'good': 0, 'break_even': 0, 'loss': 0}
+        total_spend = 0
+        total_revenue = 0
+        channel_performance = {}
+        
+        for campaign in campaigns:
+            roi = Decimal(str(campaign.get('roi', 0)))
+            performance = get_performance_indicator(roi)
+            performance_distribution[performance] = performance_distribution.get(performance, 0) + 1
+            
+            total_spend += Decimal(str(campaign.get('spend', 0)))
+            total_revenue += Decimal(str(campaign.get('revenue', 0)))
+            
+            channel = campaign.get('channel', 'unknown')
+            if channel not in channel_performance:
+                channel_performance[channel] = {'count': 0, 'spend': 0, 'revenue': 0}
+            channel_performance[channel]['count'] += 1
+            channel_performance[channel]['spend'] += Decimal(str(campaign.get('spend', 0)))
+            channel_performance[channel]['revenue'] += Decimal(str(campaign.get('revenue', 0)))
+        
+        # Calculate average ROI
+        avg_roi = ((total_revenue - total_spend) / total_spend * 100) if total_spend > 0 else 0
+        
+        # Calculate channel ROI
+        channel_roi = {}
+        for channel, metrics in channel_performance.items():
+            if metrics['spend'] > 0:
+                roi_val = ((metrics['revenue'] - metrics['spend']) / metrics['spend'] * 100)
+                channel_roi[channel] = float(roi_val)
+        
+        # Create AI prompt
+        prompt = f"""Analyze this marketing campaign performance data:
+
+Total Campaigns: {total_campaigns}
+Total Spend: ${float(total_spend):,.2f}
+Total Revenue: ${float(total_revenue):,.2f}
+Average ROI: {float(avg_roi):.1f}%
+
+Performance Distribution:
+- Excellent (ROI > 200%): {performance_distribution['excellent']} campaigns
+- Good (ROI 50-200%): {performance_distribution['good']} campaigns
+- Break-even (ROI 0-50%): {performance_distribution['break_even']} campaigns
+- Loss (ROI < 0%): {performance_distribution['loss']} campaigns
+
+Channel Performance: {channel_roi}
+
+Provide:
+1. 3-4 key insights about campaign performance and ROI trends
+2. 3-4 actionable recommendations to optimize marketing spend
+
+Format your response as JSON with two arrays: "insights" and "recommendations".
+Each should be a concise sentence (max 100 characters).
+"""
+        
+        try:
+            gemini = get_gemini_client()
+            ai_response = gemini.generate_text(prompt)
+            
+            import json
+            import re
+            
+            json_match = re.search(r'\{[\s\S]*\}', ai_response)
+            if json_match:
+                ai_data = json.loads(json_match.group())
+                insights = ai_data.get('insights', [])
+                recommendations = ai_data.get('recommendations', [])
+            else:
+                lines = [line.strip() for line in ai_response.split('\n') if line.strip()]
+                insights = lines[:4]
+                recommendations = lines[4:8] if len(lines) > 4 else []
+        
+        except Exception as e:
+            print(f"AI analysis error: {e}")
+            import traceback
+            traceback.print_exc()
+            # Fallback to rule-based insights
+            best_channel = max(channel_roi, key=channel_roi.get) if channel_roi else None
+            
+            insights = [
+                f"Portfolio ROI at {float(avg_roi):.1f}% with ${float(total_revenue):,.0f} total revenue",
+                f"{performance_distribution['excellent']} campaigns achieving excellent ROI (>200%)"
+            ]
+            
+            if best_channel:
+                insights.append(f"{best_channel.title()} is your top performing channel")
+            
+            recommendations = []
+            if best_channel:
+                recommendations.append(f"Double down on {best_channel} - showing best ROI performance")
+            
+            if performance_distribution['loss'] > 0:
+                recommendations.append(f"Investigate {performance_distribution['loss']} underperforming campaigns")
+            
+            recommendations.append("Focus budget on channels with proven ROI above 100%")
+            
+            if not best_channel:
+                recommendations.append("Add channel data to campaigns for better insights")
+        
+        return {
+            'total_campaigns': total_campaigns,
+            'total_spend': float(total_spend),
+            'total_revenue': float(total_revenue),
+            'avg_roi': float(avg_roi),
+            'performance_distribution': performance_distribution,
+            'insights': insights[:4],
+            'recommendations': recommendations[:4]
+        }
+
 
 revops_service = RevOpsService()

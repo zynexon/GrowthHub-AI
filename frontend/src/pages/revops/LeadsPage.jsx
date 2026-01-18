@@ -1,9 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { revopsService } from '../../services/revops.service'
 
 export default function LeadsPage() {
   const [uploadingFile, setUploadingFile] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [analyzing, setAnalyzing] = useState(false)
+  const [aiSummary, setAiSummary] = useState(null)
+  const [loadingAnalysis, setLoadingAnalysis] = useState(false)
   const [sortBy, setSortBy] = useState('score')
   const [showFormatInfo, setShowFormatInfo] = useState(false)
 
@@ -12,17 +16,73 @@ export default function LeadsPage() {
     queryFn: () => revopsService.getLeads(sortBy),
   })
 
+  // Fetch AI analysis when leads data is available
+  useEffect(() => {
+    const fetchAnalysis = async () => {
+      if (data?.leads && data.leads.length > 0 && !aiSummary && !loadingAnalysis) {
+        try {
+          console.log('[LeadsPage] Auto-fetching AI analysis...')
+          setLoadingAnalysis(true)
+          const summary = await revopsService.analyzeLeads()
+          console.log('[LeadsPage] AI analysis loaded:', summary)
+          setAiSummary(summary)
+        } catch (error) {
+          console.error('[LeadsPage] Failed to fetch AI analysis:', error)
+        } finally {
+          setLoadingAnalysis(false)
+        }
+      }
+    }
+    fetchAnalysis()
+  }, [data?.leads])
+
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
 
     setUploadingFile(true)
+    setUploadProgress(10)
+    setAnalyzing(false)
+    setAiSummary(null)
+    
     try {
+      // Simulate upload progress
+      setUploadProgress(30)
+      setAnalyzing(true)
+      
+      // Upload the file
       await revopsService.uploadLeadsCSV(file)
-      refetch()
-      alert('Leads uploaded successfully!')
+      setUploadProgress(60)
+      
+      // Refetch leads data
+      await refetch()
+      setUploadProgress(80)
+      
+      // Get AI analysis
+      try {
+        console.log('[LeadsPage] Fetching AI analysis...')
+        setLoadingAnalysis(true)
+        const summary = await revopsService.analyzeLeads()
+        console.log('[LeadsPage] AI analysis response:', summary)
+        setAiSummary(summary)
+      } catch (error) {
+        console.error('[LeadsPage] AI analysis failed:', error)
+      } finally {
+        setLoadingAnalysis(false)
+      }
+      
+      setUploadProgress(100)
+      setAnalyzing(false)
+      
+      // Clear progress after a delay
+      setTimeout(() => {
+        setUploadProgress(0)
+      }, 2000)
+      
     } catch (error) {
       alert('Upload failed: ' + (error.response?.data?.error || error.message))
+      setAnalyzing(false)
+      setUploadProgress(0)
     } finally {
       setUploadingFile(false)
       e.target.value = ''
@@ -113,48 +173,79 @@ export default function LeadsPage() {
         </div>
       </div>
 
-      {/* Sort Options */}
-      <div className="flex gap-3">
-        <button
-          onClick={() => setSortBy('score')}
-          className={`px-4 py-2 rounded-lg font-medium transition-all ${
-            sortBy === 'score'
-              ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/50'
-              : 'bg-gray-800 text-gray-400 hover:text-white'
-          }`}
-        >
-          Sort by Score
-        </button>
-        <button
-          onClick={() => setSortBy('created_at')}
-          className={`px-4 py-2 rounded-lg font-medium transition-all ${
-            sortBy === 'created_at'
-              ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/50'
-              : 'bg-gray-800 text-gray-400 hover:text-white'
-          }`}
-        >
-          Sort by Date
-        </button>
-      </div>
-
-      <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-lg rounded-2xl border border-purple-500/20 shadow-xl overflow-hidden hover:border-purple-500/30 transition-all">
-        {isLoading ? (
-          <div className="text-center py-12">
-            <div className="inline-block w-12 h-12 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin mb-4"></div>
-            <p className="text-gray-400">Loading leads...</p>
+      {/* Upload Progress */}
+      {(uploadingFile || uploadProgress > 0) && (
+        <div className="bg-gradient-to-br from-purple-900/20 to-blue-900/20 backdrop-blur-lg rounded-xl p-6 border border-purple-500/30 animate-fade-in-up">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="text-4xl animate-pulse">
+              {analyzing ? '🤖' : uploadProgress === 100 ? '✅' : '⬆️'}
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-white mb-1">
+                {analyzing ? 'Analyzing data with AI...' : uploadProgress === 100 ? 'Upload complete!' : 'Uploading file...'}
+              </h3>
+              <p className="text-sm text-gray-400">
+                {analyzing ? 'Processing your leads and generating insights' : `Progress: ${uploadProgress}%`}
+              </p>
+            </div>
           </div>
-        ) : data?.leads?.length > 0 ? (
+          <div className="w-full bg-gray-800 rounded-full h-3 overflow-hidden">
+            <div 
+              className="h-full bg-gradient-to-r from-purple-600 to-blue-600 transition-all duration-500 ease-out rounded-full"
+              style={{ width: `${uploadProgress}%` }}
+            >
+              <div className="h-full w-full animate-gradient-shift bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Two Column Layout: Data Table (Left) + AI Summary (Right) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left: Data Table (2 columns) */}
+        <div className="lg:col-span-2">
+          {/* Sort Options */}
+          <div className="flex gap-3 mb-4">
+            <button
+              onClick={() => setSortBy('score')}
+              className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                sortBy === 'score'
+                  ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/50'
+                  : 'bg-gray-800 text-gray-400 hover:text-white'
+              }`}
+            >
+              Sort by Score
+            </button>
+            <button
+              onClick={() => setSortBy('created_at')}
+              className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                sortBy === 'created_at'
+                  ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/50'
+                  : 'bg-gray-800 text-gray-400 hover:text-white'
+              }`}
+            >
+              Sort by Date
+            </button>
+          </div>
+
+          <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-lg rounded-2xl border border-purple-500/20 shadow-xl overflow-hidden hover:border-purple-500/30 transition-all">
+            {isLoading ? (
+              <div className="text-center py-12">
+                <div className="inline-block w-12 h-12 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin mb-4"></div>
+                <p className="text-gray-400">Loading leads...</p>
+              </div>
+            ) : data?.leads?.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-purple-500/20 bg-gray-900/50">
-                  <th className="text-left py-4 px-6 font-semibold text-gray-300">Score</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-300">Temp</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-300">Name</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-300">Email</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-300">Company</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-300">Source</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-300">Status</th>
+                  <th className="text-left py-4 px-3 font-semibold text-gray-300">Score</th>
+                  <th className="text-left py-4 px-3 font-semibold text-gray-300">Temp</th>
+                  <th className="text-left py-4 px-3 font-semibold text-gray-300">Name</th>
+                  <th className="text-left py-4 px-3 font-semibold text-gray-300">Email</th>
+                  <th className="text-left py-4 px-3 font-semibold text-gray-300">Company</th>
+                  <th className="text-left py-4 px-3 font-semibold text-gray-300">Source</th>
+                  <th className="text-left py-4 px-3 font-semibold text-gray-300">Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -164,7 +255,7 @@ export default function LeadsPage() {
                     className="border-b border-gray-800 hover:bg-gray-800/30 transition-all cursor-pointer group"
                     style={{ animationDelay: `${index * 0.05}s` }}
                   >
-                    <td className="py-4 px-6">
+                    <td className="py-4 px-3">
                       <div className="flex items-center gap-2">
                         <span className={`text-2xl font-bold ${
                           lead.score >= 80 ? 'text-red-400' :
@@ -175,23 +266,23 @@ export default function LeadsPage() {
                         </span>
                       </div>
                     </td>
-                    <td className="py-4 px-6">
+                    <td className="py-4 px-3">
                       <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium border ${getTemperatureColor(lead.temperature)}`}>
                         {getTemperatureIcon(lead.temperature)} {lead.temperature || 'N/A'}
                       </span>
                     </td>
-                    <td className="py-4 px-6 text-white group-hover:text-purple-300 transition-colors font-medium">
+                    <td className="py-4 px-3 text-white group-hover:text-purple-300 transition-colors font-medium">
                       {lead.name || 'N/A'}
                     </td>
-                    <td className="py-4 px-6 text-gray-300">{lead.email}</td>
-                    <td className="py-4 px-6 text-gray-300">{lead.company || 'N/A'}</td>
-                    <td className="py-4 px-6">
-                      <span className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-sm font-medium border border-blue-500/30">
+                    <td className="py-4 px-3 text-gray-300">{lead.email}</td>
+                    <td className="py-4 px-3 text-gray-300">{lead.company || 'N/A'}</td>
+                    <td className="py-4 px-3">
+                      <span className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-sm font-medium border border-blue-500/30 whitespace-nowrap">
                         {lead.source?.replace('_', ' ')}
                       </span>
                     </td>
-                    <td className="py-4 px-6">
-                      <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(lead.status)}`}>
+                    <td className="py-4 px-3">
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium border whitespace-nowrap ${getStatusColor(lead.status)}`}>
                         {lead.status}
                       </span>
                     </td>
@@ -207,6 +298,105 @@ export default function LeadsPage() {
             <p className="text-sm text-gray-500">Upload a CSV file to get started with AI-powered lead scoring</p>
           </div>
         )}
+          </div>
+        </div>
+
+        {/* Right: AI Summary (1 column) */}
+        <div className="lg:col-span-1">
+          {/* Spacer to align with sort buttons */}
+          <div className="h-[52px] mb-4"></div>
+          
+          <div className="sticky top-6">
+            <div className="bg-gradient-to-br from-purple-900/20 to-blue-900/20 backdrop-blur-lg rounded-2xl border border-purple-500/30 overflow-hidden">
+              <div className="p-6 border-b border-purple-500/20 bg-purple-900/20">
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  <span className="text-2xl">🤖</span>
+                  AI Analysis
+                </h3>
+                <p className="text-sm text-gray-400 mt-1">Insights from your lead data</p>
+              </div>
+
+              {loadingAnalysis ? (
+                <div className="p-12 text-center">
+                  <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-purple-500 border-t-transparent mb-4"></div>
+                  <p className="text-gray-300 font-medium">Analyzing with AI...</p>
+                  <p className="text-sm text-gray-500 mt-2">This may take a few seconds</p>
+                </div>
+              ) : aiSummary ? (
+                <div className="p-6 space-y-4">
+                  {/* Total Leads */}
+                  <div className="bg-gray-800/30 rounded-lg p-4 border border-purple-500/20">
+                    <div className="text-sm text-gray-400 mb-1">Total Leads</div>
+                    <div className="text-3xl font-bold text-white">{aiSummary.total_leads}</div>
+                  </div>
+
+                  {/* Score Distribution */}
+                  {aiSummary.score_distribution && (
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-semibold text-gray-300 flex items-center gap-2">
+                        📊 Score Distribution
+                      </h4>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-red-400">🔥 Hot (80-100)</span>
+                          <span className="text-white font-semibold">{aiSummary.score_distribution.hot || 0}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-yellow-400">🟡 Warm (50-79)</span>
+                          <span className="text-white font-semibold">{aiSummary.score_distribution.warm || 0}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-blue-400">🔵 Cold (0-49)</span>
+                          <span className="text-white font-semibold">{aiSummary.score_distribution.cold || 0}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Key Insights */}
+                  {aiSummary.insights && aiSummary.insights.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-semibold text-gray-300 flex items-center gap-2">
+                        💡 Key Insights
+                      </h4>
+                      <ul className="space-y-2">
+                        {aiSummary.insights.map((insight, index) => (
+                          <li key={index} className="flex items-start gap-2 text-sm text-gray-300">
+                            <span className="text-purple-400 mt-1">•</span>
+                            <span>{insight}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Recommendations */}
+                  {aiSummary.recommendations && aiSummary.recommendations.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-semibold text-gray-300 flex items-center gap-2">
+                        ✨ Recommendations
+                      </h4>
+                      <ul className="space-y-2">
+                        {aiSummary.recommendations.map((rec, index) => (
+                          <li key={index} className="flex items-start gap-2 text-sm text-gray-300 bg-purple-500/10 rounded-lg p-2">
+                            <span className="text-green-400 mt-0.5">✓</span>
+                            <span>{rec}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="p-12 text-center">
+                  <div className="text-6xl mb-4 opacity-20">🤖</div>
+                  <p className="text-gray-400">Upload leads to see AI-powered insights</p>
+                  <p className="text-sm text-gray-500 mt-2">Analysis includes score distribution, key insights, and recommendations</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* CSV Format Info Modal */}

@@ -72,3 +72,21 @@ def get_dashboard():
     org_id = request.organization_id
     result = customer_health_service.get_dashboard_stats(org_id)
     return jsonify(result), 200
+
+
+@customer_health_bp.route('/customers/analyze', methods=['GET'])
+@require_auth
+@require_role('org_owner', 'org_member')
+def analyze_customers():
+    """Analyze customer health and generate AI insights."""
+    org_id = request.organization_id
+    print(f"[analyze_customers] Starting analysis for org: {org_id}")
+    try:
+        result = customer_health_service.analyze_customers_with_ai(org_id)
+        print(f"[analyze_customers] Analysis result: {result}")
+        return jsonify(result), 200
+    except Exception as e:
+        print(f"[analyze_customers] Error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500

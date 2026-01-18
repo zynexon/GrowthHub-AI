@@ -34,5 +34,10 @@ export const customerHealthService = {
   clearCustomers: async () => {
     const response = await api.delete('/customer-health/clear')
     return response.data
+  },
+
+  analyzeCustomers: async () => {
+    const response = await api.get('/customer-health/customers/analyze')
+    return response.data
   }
 }

@@ -8,7 +8,9 @@ class GeminiClient:
     """Wrapper for Google Gemini API calls."""
     
     def __init__(self):
-        genai.configure(api_key=current_app.config['GOOGLE_GEMINI_API_KEY'])
+        self.api_key = current_app.config.get('GOOGLE_GEMINI_API_KEY')
+        if self.api_key:
+            genai.configure(api_key=self.api_key)
         self.model = genai.GenerativeModel('gemini-pro')
     
     def predict_churn(self, customer_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -75,4 +77,26 @@ class GeminiClient:
             return {
                 'success': False,
                 'error': str(e)
-            }
+            }    
+    def generate_text(self, prompt: str) -> str:
+        """Generate text response from a prompt."""
+        if not self.api_key:
+            raise ValueError("GOOGLE_GEMINI_API_KEY not configured")
+        
+        try:
+            response = self.model.generate_content(prompt)
+            return response.text
+        except Exception as e:
+            print(f"Gemini API error: {e}")
+            raise
+
+
+# Create singleton instance
+gemini_client = None
+
+def get_gemini_client():
+    """Get or create Gemini client instance."""
+    global gemini_client
+    if gemini_client is None:
+        gemini_client = GeminiClient()
+    return gemini_client

@@ -215,6 +215,126 @@ class CustomerHealthService:
             'message': f'Deleted {deleted_count} customers',
             'deleted': deleted_count
         }
+    
+    def analyze_customers_with_ai(self, org_id: str) -> Dict:
+        """Analyze customer health data and provide AI-powered insights."""
+        from app.ai.gemini_client import get_gemini_client
+        
+        # Get all customers with health scores
+        query = self.admin.table('customers')\
+            .select('*')\
+            .eq('organization_id', org_id)
+        
+        response = query.execute()
+        customers = response.data
+        total_customers = len(customers)
+        
+        if total_customers == 0:
+            return {
+                'total_customers': 0,
+                'health_distribution': {'healthy': 0, 'watch': 0, 'at_risk': 0},
+                'insights': ['No customer data available yet'],
+                'recommendations': ['Upload customer data to get AI-powered insights']
+            }
+        
+        # Calculate health distribution and metrics
+        health_distribution = {'healthy': 0, 'watch': 0, 'at_risk': 0}
+        churn_risk_distribution = {'critical': 0, 'high': 0, 'medium': 0, 'low': 0}
+        total_mrr = 0
+        expansion_candidates = 0
+        
+        for customer in customers:
+            # Calculate health score
+            score, breakdown = calculate_health_score(customer)
+            status = get_health_status(score)
+            health_distribution[status] = health_distribution.get(status, 0) + 1
+            
+            # Churn risk
+            risk_level, risk_days, risk_reasons = predict_churn_risk(customer, score)
+            if risk_level:
+                churn_risk_distribution[risk_level] = churn_risk_distribution.get(risk_level, 0) + 1
+            
+            # MRR
+            mrr = customer.get('mrr', 0)
+            if mrr:
+                total_mrr += mrr
+            
+            # Expansion signals
+            expansion = detect_expansion_signals(customer, score)
+            if expansion.get('signals'):
+                expansion_candidates += 1
+        
+        avg_mrr = total_mrr / total_customers if total_customers > 0 else 0
+        at_risk_percent = (health_distribution['at_risk'] / total_customers * 100) if total_customers > 0 else 0
+        
+        # Create AI prompt
+        prompt = f"""Analyze this customer health portfolio data:
+
+Total Customers: {total_customers}
+Total MRR: ${total_mrr:,.2f}
+Average MRR per Customer: ${avg_mrr:.2f}
+
+Health Status Distribution:
+- Healthy: {health_distribution['healthy']} customers ({health_distribution['healthy']/total_customers*100:.1f}%)
+- Watch: {health_distribution['watch']} customers ({health_distribution['watch']/total_customers*100:.1f}%)
+- At Risk: {health_distribution['at_risk']} customers ({health_distribution['at_risk']/total_customers*100:.1f}%)
+
+Churn Risk:
+- Critical: {churn_risk_distribution['critical']} customers
+- High: {churn_risk_distribution['high']} customers
+- Medium: {churn_risk_distribution['medium']} customers
+
+Expansion Opportunities: {expansion_candidates} customers showing positive signals
+
+Provide:
+1. 3-4 key insights about customer health trends and risks
+2. 3-4 actionable recommendations to reduce churn and drive expansion
+
+Format your response as JSON with two arrays: "insights" and "recommendations".
+Each should be a concise sentence (max 100 characters).
+"""
+        
+        try:
+            gemini = get_gemini_client()
+            ai_response = gemini.generate_text(prompt)
+            
+            import json
+            import re
+            
+            json_match = re.search(r'\{[\s\S]*\}', ai_response)
+            if json_match:
+                ai_data = json.loads(json_match.group())
+                insights = ai_data.get('insights', [])
+                recommendations = ai_data.get('recommendations', [])
+            else:
+                lines = [line.strip() for line in ai_response.split('\n') if line.strip()]
+                insights = lines[:4]
+                recommendations = lines[4:8] if len(lines) > 4 else []
+        
+        except Exception as e:
+            print(f"AI analysis error: {e}")
+            # Fallback to rule-based insights
+            insights = [
+                f"{at_risk_percent:.1f}% of customers at risk - immediate attention needed",
+                f"Portfolio MRR at ${total_mrr:,.0f} with ${avg_mrr:.0f} average per customer",
+                f"{expansion_candidates} customers ready for upsell conversations"
+            ]
+            recommendations = [
+                f"Prioritize {health_distribution['at_risk']} at-risk customers with retention campaigns",
+                f"Engage {expansion_candidates} expansion candidates with upgrade offers",
+                "Implement proactive outreach for watch-list customers"
+            ]
+        
+        return {
+            'total_customers': total_customers,
+            'total_mrr': float(total_mrr),
+            'avg_mrr': float(avg_mrr),
+            'health_distribution': health_distribution,
+            'churn_risk_distribution': churn_risk_distribution,
+            'expansion_candidates': expansion_candidates,
+            'insights': insights[:4],
+            'recommendations': recommendations[:4]
+        }
 
 
 customer_health_service = CustomerHealthService()

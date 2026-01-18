@@ -41,6 +41,11 @@ export const revopsService = {
     return response.data
   },
 
+  async analyzeLeads() {
+    const response = await api.get('/revops/leads/analyze')
+    return response.data
+  },
+
   async clearCampaigns() {
     const response = await api.delete('/revops/campaigns/clear')
     return response.data
@@ -66,6 +71,11 @@ export const revopsService = {
         'Content-Type': 'multipart/form-data',
       },
     })
+    return response.data
+  },
+
+  async analyzeCampaigns() {
+    const response = await api.get('/revops/campaigns/analyze')
     return response.data
   },
 

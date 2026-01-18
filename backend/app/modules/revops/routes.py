@@ -62,6 +62,22 @@ def get_lead(lead_id):
     result = revops_service.get_lead(org_id, lead_id)
     return jsonify(result), 200
 
+@revops_bp.route('/leads/analyze', methods=['GET'])
+@require_auth
+@require_role('org_owner', 'org_member')
+def analyze_leads():
+    """Analyze leads and generate AI insights."""
+    org_id = request.organization_id
+    print(f"[analyze_leads] Starting analysis for org: {org_id}")
+    try:
+        result = revops_service.analyze_leads_with_ai(org_id)
+        print(f"[analyze_leads] Analysis result: {result}")
+        return jsonify(result), 200
+    except Exception as e:
+        print(f"[analyze_leads] Error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
 
 @revops_bp.route('/leads/<lead_id>', methods=['PUT'])
 @require_auth
@@ -135,6 +151,24 @@ def upload_campaigns():
         return jsonify({'error': str(e)}), 400
 
 
+@revops_bp.route('/campaigns/analyze', methods=['GET'])
+@require_auth
+@require_role('org_owner', 'org_member')
+def analyze_campaigns():
+    """Analyze campaigns and generate AI insights."""
+    org_id = request.organization_id
+    print(f"[analyze_campaigns] Starting analysis for org: {org_id}")
+    try:
+        result = revops_service.analyze_campaigns_with_ai(org_id)
+        print(f"[analyze_campaigns] Analysis result: {result}")
+        return jsonify(result), 200
+    except Exception as e:
+        print(f"[analyze_campaigns] Error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
 # Dashboard route
 
 @revops_bp.route('/dashboard', methods=['GET'])
@@ -144,7 +178,4 @@ def get_dashboard():
     """Get RevOps dashboard statistics."""
     org_id = request.organization_id
     result = revops_service.get_dashboard_stats(org_id)
-    return jsonify(result), 200
-    org_id = request.organization_id
-    result = revops_service.get_campaigns(org_id)
     return jsonify(result), 200
