@@ -35,12 +35,17 @@ class GeminiClient:
                 print(f"[GeminiClient] Using model: {suitable_model}")
                 self.model = genai.GenerativeModel(suitable_model)
             else:
-                print("[GeminiClient] No suitable model found, defaulting to gemini-pro")
-                self.model = genai.GenerativeModel('gemini-pro')
+                print("[GeminiClient] No suitable model found, trying gemini-1.5-flash")
+                self.model = genai.GenerativeModel('gemini-1.5-flash')
         except Exception as e:
             print(f"[GeminiClient] Error listing models: {type(e).__name__}: {e}")
-            print("[GeminiClient] Defaulting to gemini-pro")
-            self.model = genai.GenerativeModel('gemini-pro')
+            print("[GeminiClient] Defaulting to gemini-1.5-flash")
+            try:
+                self.model = genai.GenerativeModel('gemini-1.5-flash')
+            except Exception as e2:
+                print(f"[GeminiClient] Failed to load gemini-1.5-flash: {e2}")
+                print("[GeminiClient] Trying gemini-1.5-pro as last resort")
+                self.model = genai.GenerativeModel('gemini-1.5-pro')
         
         self.chat_sessions = {}  # Store chat sessions by user ID
     
