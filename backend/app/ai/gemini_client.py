@@ -9,11 +9,20 @@ class GeminiClient:
     
     def __init__(self):
         self.api_key = current_app.config.get('GOOGLE_GEMINI_API_KEY')
+        print(f"[GeminiClient] Initializing with API key: {'SET' if self.api_key else 'NOT SET'}")
+        print(f"[GeminiClient] API key length: {len(self.api_key) if self.api_key else 0}")
+        
+        if not self.api_key:
+            print("[GeminiClient] ERROR: GOOGLE_GEMINI_API_KEY environment variable not set!")
+            raise ValueError("GOOGLE_GEMINI_API_KEY not configured")
+            
         if self.api_key:
             genai.configure(api_key=self.api_key)
+            print("[GeminiClient] Gemini API configured successfully")
         
         # List available models and use the first one that supports generateContent
         try:
+            print("[GeminiClient] Attempting to list available models...")
             available_models = genai.list_models()
             print("[GeminiClient] Available models:")
             suitable_model = None
@@ -29,7 +38,7 @@ class GeminiClient:
                 print("[GeminiClient] No suitable model found, defaulting to gemini-pro")
                 self.model = genai.GenerativeModel('gemini-pro')
         except Exception as e:
-            print(f"[GeminiClient] Error listing models: {e}")
+            print(f"[GeminiClient] Error listing models: {type(e).__name__}: {e}")
             print("[GeminiClient] Defaulting to gemini-pro")
             self.model = genai.GenerativeModel('gemini-pro')
         

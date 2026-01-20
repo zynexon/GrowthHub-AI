@@ -34,6 +34,7 @@ def create_app(config_name='development'):
     from .modules.settings.routes import settings_bp
     from .modules.stripe_routes import stripe_bp
     from .api.public_routes import public_api_bp
+    from .debug_routes import debug_bp
     
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(revops_bp, url_prefix='/api/revops')
@@ -45,6 +46,7 @@ def create_app(config_name='development'):
     app.register_blueprint(settings_bp)
     app.register_blueprint(stripe_bp)
     app.register_blueprint(public_api_bp)  # Public API with API key auth
+    app.register_blueprint(debug_bp)  # Debug endpoints
     
     # Health check endpoint
     @app.route('/health')
