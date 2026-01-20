@@ -95,13 +95,17 @@ def chat_with_leads():
         return jsonify({'error': 'Message is required'}), 400
     
     try:
+        print(f"[chat_with_leads] Starting chat for org {org_id}")
+        print(f"[chat_with_leads] Message: {message}")
         result = revops_service.chat_about_leads(org_id, user_id, message, conversation_history)
+        print(f"[chat_with_leads] Success")
         return jsonify(result), 200
     except Exception as e:
         print(f"[chat_with_leads] Error: {str(e)}")
+        print(f"[chat_with_leads] Error type: {type(e).__name__}")
         import traceback
         traceback.print_exc()
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': f'{type(e).__name__}: {str(e)}'}), 500
 
 @revops_bp.route('/leads/<lead_id>', methods=['PUT'])
 @require_auth
