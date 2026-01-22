@@ -18,7 +18,8 @@ class Config:
     
     # AI Services
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-    GOOGLE_GEMINI_API_KEY = os.getenv('GOOGLE_GEMINI_API_KEY')
+    # Check both GOOGLE_API_KEY and GOOGLE_GEMINI_API_KEY for compatibility
+    GOOGLE_GEMINI_API_KEY = os.getenv('GOOGLE_API_KEY') or os.getenv('GOOGLE_GEMINI_API_KEY')
     
     # Application
     FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173').split(',')
