@@ -2,13 +2,20 @@
 import google.generativeai as genai
 from flask import current_app
 from typing import Dict, Any, List
+import os
 
 
 class GeminiClient:
     """Wrapper for Google Gemini API calls."""
     
     def __init__(self):
-        self.api_key = current_app.config.get('GOOGLE_GEMINI_API_KEY')
+        # Try to get from Flask config first, fallback to os.getenv
+        try:
+            self.api_key = current_app.config.get('GOOGLE_GEMINI_API_KEY')
+        except RuntimeError:
+            # No app context, fallback to environment variable
+            self.api_key = os.getenv('GOOGLE_GEMINI_API_KEY')
+            
         print(f"[GeminiClient] Initializing with API key: {'SET' if self.api_key else 'NOT SET'}")
         print(f"[GeminiClient] API key length: {len(self.api_key) if self.api_key else 0}")
         
