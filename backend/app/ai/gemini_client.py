@@ -12,16 +12,24 @@ class GeminiClient:
         # Try to get from Flask config first, fallback to os.getenv
         try:
             self.api_key = current_app.config.get('GOOGLE_GEMINI_API_KEY')
+            print("[GeminiClient] Loaded API key from Flask config")
         except RuntimeError:
             # No app context, fallback to environment variable
             self.api_key = os.getenv('GOOGLE_GEMINI_API_KEY')
+            print("[GeminiClient] Loaded API key from os.getenv")
+        
+        # Also try direct os.getenv if Flask config was empty
+        if not self.api_key:
+            self.api_key = os.getenv('GOOGLE_GEMINI_API_KEY')
+            print("[GeminiClient] Fallback: Loaded API key from os.getenv")
             
         print(f"[GeminiClient] Initializing with API key: {'SET' if self.api_key else 'NOT SET'}")
         print(f"[GeminiClient] API key length: {len(self.api_key) if self.api_key else 0}")
         
         if not self.api_key:
             print("[GeminiClient] ERROR: GOOGLE_GEMINI_API_KEY environment variable not set!")
-            raise ValueError("GOOGLE_GEMINI_API_KEY not configured")
+            # Don't raise here, let's see what happens
+            # raise ValueError("GOOGLE_GEMINI_API_KEY not configured")
             
         if self.api_key:
             genai.configure(api_key=self.api_key)
@@ -291,5 +299,13 @@ def get_gemini_client():
     """Get or create Gemini client instance."""
     global gemini_client
     if gemini_client is None:
-        gemini_client = GeminiClient()
+        try:
+            print("[get_gemini_client] Creating new GeminiClient instance...")
+            gemini_client = GeminiClient()
+            print("[get_gemini_client] GeminiClient instance created successfully")
+        except Exception as e:
+            print(f"[get_gemini_client] Failed to create GeminiClient: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            raise
     return gemini_client
