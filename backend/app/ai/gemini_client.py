@@ -208,10 +208,11 @@ Now answer the user's question using ONLY the leads in the table."""
             print(f"[chat_with_data] ERROR: {str(e)}")
             import traceback
             traceback.print_exc()
+            error_details = f"{type(e).__name__}: {str(e)}"
             return {
                 'success': False,
-                'error': str(e),
-                'response': "I'm having trouble analyzing the data right now. Please try again."
+                'error': error_details,
+                'response': f"I'm having trouble analyzing the data right now. Error details: {error_details}"
             }
     
     def predict_churn(self, customer_data: Dict[str, Any]) -> Dict[str, Any]:
