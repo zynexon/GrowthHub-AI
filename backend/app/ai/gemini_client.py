@@ -188,16 +188,14 @@ Now answer the user's question using ONLY the leads in the table."""
             # Always start fresh session to ensure context is always included
             session_key = f"{user_id}_{data_type}"
             print(f"[chat_with_data] Creating fresh chat session with context for {session_key}")
-            self.chat_sessions[session_key] = self.model.start_chat(history=[])
-            
-            chat = self.chat_sessions[session_key]
             
             # ALWAYS include full context with every message to ensure AI uses the data
             full_message = f"{context}\n\nUser Question: {message}"
             print(f"[chat_with_data] Including full data context with message")
             
             print(f"[chat_with_data] Sending message to Gemini...")
-            response = chat.send_message(full_message)
+            # Use generate_content directly instead of chat to avoid authentication issues
+            response = self.model.generate_content(full_message)
             print(f"[chat_with_data] Got response: {response.text[:100]}...")
             
             return {
