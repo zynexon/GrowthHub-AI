@@ -37,8 +37,18 @@ def test_gemini():
         models = list(genai.list_models())
         model_names = [m.name for m in models[:5]]  # First 5 models
         
+        # Find a suitable model that supports generateContent
+        suitable_model = None
+        for m in models:
+            if 'generateContent' in m.supported_generation_methods:
+                suitable_model = m.name
+                break
+        
+        if not suitable_model:
+            suitable_model = 'gemini-2.5-flash'  # Fallback
+        
         # Try a simple generation
-        model = genai.GenerativeModel('gemini-pro')
+        model = genai.GenerativeModel(suitable_model)
         response = model.generate_content("Say 'Hello, the API is working!'")
         
         return jsonify({
@@ -47,6 +57,7 @@ def test_gemini():
             'api_key_length': len(api_key),
             'models_found': len(models),
             'sample_models': model_names,
+            'model_used': suitable_model,
             'test_response': response.text
         }), 200
         
