@@ -32,6 +32,8 @@ class GeminiClient:
             # raise ValueError("GOOGLE_GEMINI_API_KEY not configured")
             
         if self.api_key:
+            # Set as environment variable for the deprecated package
+            os.environ['GOOGLE_API_KEY'] = self.api_key
             genai.configure(api_key=self.api_key)
             print("[GeminiClient] Gemini API configured successfully")
         
