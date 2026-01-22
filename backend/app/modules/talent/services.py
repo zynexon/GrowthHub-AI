@@ -46,7 +46,7 @@ class TalentService:
         return talent
     
     @staticmethod
-    def create_talent(organization_id, name, email, skill_type):
+    def create_talent(organization_id, name, email, skill_type, primary_skill=None, secondary_skill=None, bio=None):
         """Create new talent"""
         supabase = get_supabase_admin()
         
@@ -55,6 +55,9 @@ class TalentService:
             'name': name,
             'email': email,
             'skill_type': skill_type,
+            'primary_skill': primary_skill,
+            'secondary_skill': secondary_skill,
+            'bio': bio,
             'status': 'active',
             'tasks_assigned': 0,
             'tasks_completed': 0,
@@ -68,7 +71,7 @@ class TalentService:
         return response.data[0]
     
     @staticmethod
-    def update_talent(organization_id, talent_id, name=None, email=None, skill_type=None):
+    def update_talent(organization_id, talent_id, name=None, email=None, skill_type=None, primary_skill=None, secondary_skill=None, bio=None):
         """Update talent information"""
         supabase = get_supabase_admin()
         
@@ -79,6 +82,12 @@ class TalentService:
             update_data['email'] = email
         if skill_type is not None:
             update_data['skill_type'] = skill_type
+        if primary_skill is not None:
+            update_data['primary_skill'] = primary_skill
+        if secondary_skill is not None:
+            update_data['secondary_skill'] = secondary_skill
+        if bio is not None:
+            update_data['bio'] = bio
         
         if not update_data:
             return None

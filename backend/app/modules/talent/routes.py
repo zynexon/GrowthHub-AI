@@ -60,13 +60,16 @@ def create_talent():
         name = data.get('name')
         email = data.get('email')
         skill_type = data.get('skill_type')
+        primary_skill = data.get('primary_skill')
+        secondary_skill = data.get('secondary_skill')
+        bio = data.get('bio')
         
         if not all([name, email, skill_type]):
             print("Missing required fields")
             return jsonify({'error': 'Missing required fields'}), 400
         
         print(f"Calling TalentService.create_talent with: name={name}, email={email}, skill_type={skill_type}")
-        talent = TalentService.create_talent(organization_id, name, email, skill_type)
+        talent = TalentService.create_talent(organization_id, name, email, skill_type, primary_skill, secondary_skill, bio)
         print(f"Talent created successfully: {talent}")
         return jsonify({'talent': talent}), 201
     except Exception as e:
@@ -89,7 +92,10 @@ def update_talent(talent_id):
             talent_id,
             name=data.get('name'),
             email=data.get('email'),
-            skill_type=data.get('skill_type')
+            skill_type=data.get('skill_type'),
+            primary_skill=data.get('primary_skill'),
+            secondary_skill=data.get('secondary_skill'),
+            bio=data.get('bio')
         )
         
         if not talent:

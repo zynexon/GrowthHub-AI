@@ -20,11 +20,14 @@ export const talentService = {
   },
 
   // Create talent
-  createTalent: async (name, email, skillType) => {
+  createTalent: async (name, email, skillType, primarySkill, secondarySkill, bio) => {
     const response = await api.post('/talent', {
       name,
       email,
-      skill_type: skillType
+      skill_type: skillType,
+      primary_skill: primarySkill,
+      secondary_skill: secondarySkill,
+      bio
     })
     return response.data
   },
@@ -34,7 +37,10 @@ export const talentService = {
     const response = await api.put(`/talent/${id}`, {
       name: data.name,
       email: data.email,
-      skill_type: data.skillType
+      skill_type: data.skillType,
+      primary_skill: data.primarySkill,
+      secondary_skill: data.secondarySkill,
+      bio: data.bio
     })
     return response.data
   },

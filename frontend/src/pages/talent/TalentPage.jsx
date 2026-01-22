@@ -7,7 +7,14 @@ import UpgradeModal from '../../components/UpgradeModal'
 export default function TalentPage() {
   const [view, setView] = useState('list') // list, add, edit
   const [selectedTalent, setSelectedTalent] = useState(null)
-  const [form, setForm] = useState({ name: '', email: '', skillType: 'data_labeling' })
+  const [form, setForm] = useState({ 
+    name: '', 
+    email: '', 
+    skillType: 'data_labeling',
+    primarySkill: '',
+    secondarySkill: '',
+    bio: ''
+  })
   const [isSkillTypeOpen, setIsSkillTypeOpen] = useState(false)
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [currentPlan, setCurrentPlan] = useState('free')
@@ -41,7 +48,8 @@ export default function TalentPage() {
 
   // Create mutation
   const createMutation = useMutation({
-    mutationFn: ({ name, email, skillType }) => talentService.createTalent(name, email, skillType),
+    mutationFn: ({ name, email, skillType, primarySkill, secondarySkill, bio }) => 
+      talentService.createTalent(name, email, skillType, primarySkill, secondarySkill, bio),
     onSuccess: () => {
       queryClient.invalidateQueries(['talent'])
       queryClient.invalidateQueries(['talent-statistics'])
@@ -87,7 +95,14 @@ export default function TalentPage() {
   })
 
   const resetForm = () => {
-    setForm({ name: '', email: '', skillType: 'data_labeling' })
+    setForm({ 
+      name: '', 
+      email: '', 
+      skillType: 'data_labeling',
+      primarySkill: '',
+      secondarySkill: '',
+      bio: ''
+    })
     setSelectedTalent(null)
   }
 
@@ -105,7 +120,10 @@ export default function TalentPage() {
     setForm({
       name: talent.name,
       email: talent.email,
-      skillType: talent.skill_type
+      skillType: talent.skill_type,
+      primarySkill: talent.primary_skill || '',
+      secondarySkill: talent.secondary_skill || '',
+      bio: talent.bio || ''
     })
     setView('edit')
   }
@@ -353,6 +371,49 @@ export default function TalentPage() {
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                 className="w-full px-5 py-4 bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-gray-700 rounded-xl text-white text-lg focus:border-purple-500 focus:ring-4 focus:ring-purple-500/30 transition-all placeholder-gray-500"
                 placeholder="john@example.com"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-gray-200 mb-3 flex items-center gap-2">
+                <span className="text-lg">⭐</span>
+                Primary Skill
+              </label>
+              <input
+                type="text"
+                required
+                value={form.primarySkill}
+                onChange={(e) => setForm({ ...form, primarySkill: e.target.value })}
+                className="w-full px-5 py-4 bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-gray-700 rounded-xl text-white text-lg focus:border-purple-500 focus:ring-4 focus:ring-purple-500/30 transition-all placeholder-gray-500"
+                placeholder="e.g., Data annotation, Quality assurance"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-gray-200 mb-3 flex items-center gap-2">
+                <span className="text-lg">✨</span>
+                Secondary Skill <span className="text-gray-400 text-sm font-normal">(Optional)</span>
+              </label>
+              <input
+                type="text"
+                value={form.secondarySkill}
+                onChange={(e) => setForm({ ...form, secondarySkill: e.target.value })}
+                className="w-full px-5 py-4 bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-gray-700 rounded-xl text-white text-lg focus:border-purple-500 focus:ring-4 focus:ring-purple-500/30 transition-all placeholder-gray-500"
+                placeholder="e.g., Customer support, Content moderation"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-gray-200 mb-3 flex items-center gap-2">
+                <span className="text-lg">📝</span>
+                Short Bio <span className="text-gray-400 text-sm font-normal">(Optional, 1-2 lines)</span>
+              </label>
+              <textarea
+                rows={2}
+                value={form.bio}
+                onChange={(e) => setForm({ ...form, bio: e.target.value })}
+                className="w-full px-5 py-4 bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-gray-700 rounded-xl text-white text-lg focus:border-purple-500 focus:ring-4 focus:ring-purple-500/30 transition-all placeholder-gray-500 resize-none"
+                placeholder="Brief description of experience and expertise..."
               />
             </div>
 
