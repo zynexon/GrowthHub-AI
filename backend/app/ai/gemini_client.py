@@ -194,6 +194,8 @@ Now answer the user's question using ONLY the leads in the table."""
             print(f"[chat_with_data] Including full data context with message")
             
             print(f"[chat_with_data] Sending message to Gemini...")
+            # Reconfigure API key before each call to ensure it's set
+            genai.configure(api_key=self.api_key)
             # Use generate_content directly instead of chat to avoid authentication issues
             response = self.model.generate_content(full_message)
             print(f"[chat_with_data] Got response: {response.text[:100]}...")
