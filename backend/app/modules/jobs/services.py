@@ -30,7 +30,7 @@ class JobsService:
         return response.data
     
     @staticmethod
-    def create_job(organization_id, title, job_type, description=None, assigned_talent_id=None, due_date=None):
+    def create_job(organization_id, title, job_type, required_skill=None, description=None, assigned_talent_id=None, due_date=None):
         """Create a new job"""
         supabase = get_supabase_admin()
         
@@ -38,6 +38,7 @@ class JobsService:
             'organization_id': organization_id,
             'title': title,
             'job_type': job_type,
+            'required_skill': required_skill,
             'description': description,
             'assigned_talent_id': assigned_talent_id,
             'due_date': due_date,
@@ -61,7 +62,7 @@ class JobsService:
         return response.data[0]
     
     @staticmethod
-    def update_job(organization_id, job_id, title=None, job_type=None, description=None, 
+    def update_job(organization_id, job_id, title=None, job_type=None, required_skill=None, description=None, 
                    assigned_talent_id=None, due_date=None, status=None):
         """Update job information"""
         supabase = get_supabase_admin()
@@ -71,6 +72,8 @@ class JobsService:
             update_data['title'] = title
         if job_type is not None:
             update_data['job_type'] = job_type
+        if required_skill is not None:
+            update_data['required_skill'] = required_skill
         if description is not None:
             update_data['description'] = description
         if assigned_talent_id is not None:

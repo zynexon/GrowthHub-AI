@@ -9,21 +9,21 @@ export default function JobsPage() {
   const [statistics, setStatistics] = useState(null);
   const [talents, setTalents] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [showDetail, setShowDetail] = useState(false);
+  const [view, setView] = useState('list'); // list, add, edit, detail
   const [selectedJob, setSelectedJob] = useState(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [currentPlan, setCurrentPlan] = useState('free');
   const [formData, setFormData] = useState({
     title: '',
     jobType: '',
+    requiredSkill: '',
     description: '',
     assignedTalentId: '',
     dueDate: '',
     status: 'open'
   });
-  const [isJobTypeOpen, setIsJobTypeOpen] = useState(false);
-  const jobTypeRef = useRef(null);
+  const [isRequiredSkillOpen, setIsRequiredSkillOpen] = useState(false);
+  const requiredSkillRef = useRef(null);
 
   const jobTypeOptions = [
     {
@@ -46,9 +46,52 @@ export default function JobsPage() {
     }
   ];
 
+  const skillTypeOptions = [
+    {
+      value: 'data_labeling',
+      label: 'Data Labeling',
+      icon: '🏷️',
+      description: 'Dataset labeling and annotation'
+    },
+    {
+      value: 'operations',
+      label: 'Operations',
+      icon: '⚙️',
+      description: 'Business operations tasks'
+    },
+    {
+      value: 'support',
+      label: 'Support',
+      icon: '🎧',
+      description: 'Customer support services'
+    },
+    {
+      value: 'qa',
+      label: 'QA',
+      icon: '✅',
+      description: 'Quality assurance testing'
+    },
+    {
+      value: 'field_service',
+      label: 'Field Service',
+      icon: '🚚',
+      description: 'On-site field services'
+    }
+  ];
+
   useEffect(() => {
     loadData();
     fetchSubscription();
+  }, []);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (requiredSkillRef.current && !requiredSkillRef.current.contains(event.target)) {
+        setIsRequiredSkillOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const fetchSubscription = async () => {
@@ -109,11 +152,12 @@ export default function JobsPage() {
         await jobsService.createJob(payload);
       }
 
-      setShowForm(false);
+      setView('list');
       setSelectedJob(null);
       setFormData({
         title: '',
         jobType: '',
+        requiredSkill: '',
         description: '',
         assignedTalentId: '',
         dueDate: '',
@@ -135,13 +179,13 @@ export default function JobsPage() {
     setFormData({
       title: job.title,
       jobType: job.job_type,
+      requiredSkill: job.required_skill || '',
       description: job.description || '',
       assignedTalentId: job.assigned_talent_id || '',
       dueDate: job.due_date ? job.due_date.split('T')[0] : '',
       status: job.status
     });
-    setShowForm(true);
-    setShowDetail(false);
+    setView('edit');
   };
 
   const handleDelete = async (jobId) => {
@@ -158,7 +202,7 @@ export default function JobsPage() {
   const handleMarkCompleted = async (jobId) => {
     try {
       await jobsService.markCompleted(jobId);
-      setShowDetail(false);
+      setView('list');
       loadData();
     } catch (error) {
       console.error('Error marking job as completed:', error);
@@ -168,7 +212,7 @@ export default function JobsPage() {
 
   const viewDetail = (job) => {
     setSelectedJob(job);
-    setShowDetail(true);
+    setView('detail');
   };
 
   const getStatusBadge = (status) => {
@@ -221,13 +265,46 @@ export default function JobsPage() {
 
   return (
     <div className="space-y-6 animate-fade-in-up">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-white mb-2">💼 Jobs</h1>
-        <p className="text-gray-400">Simple task tracker for company work</p>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
+            <span className="text-4xl">💼</span>
+            Jobs
+          </h1>
+          <p className="text-gray-400">Simple task tracker for company work</p>
+        </div>
+        {view === 'list' && (
+          <button
+            onClick={() => {
+              setSelectedJob(null);
+              setFormData({
+                title: '',
+                jobType: '',
+                requiredSkill: '',
+                description: '',
+                assignedTalentId: '',
+                dueDate: '',
+                status: 'open'
+              });
+              setView('add');
+            }}
+            className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl font-bold hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg shadow-purple-500/50 hover:scale-105"
+          >
+            ➕ Create Job
+          </button>
+        )}
+        {view !== 'list' && (
+          <button
+            onClick={() => { setView('list'); setSelectedJob(null); }}
+            className="px-6 py-3 bg-gray-800 text-white rounded-xl font-semibold hover:bg-gray-700 transition-all"
+          >
+            ← Back to List
+          </button>
+        )}
       </div>
 
-      {/* Statistics Cards */}
-      {statistics && (
+      {/* Statistics Cards - Only show in list view */}
+      {view === 'list' && statistics && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 animate-fade-in-up" style={{animationDelay: '0.1s'}}>
           <div className="bg-gradient-to-br from-blue-900/20 to-blue-800/20 backdrop-blur-lg rounded-xl p-6 border border-blue-500/20 hover:border-blue-500/40 transition-all hover:scale-105 hover:shadow-xl hover:shadow-blue-500/20 relative overflow-hidden group">
             <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -272,31 +349,9 @@ export default function JobsPage() {
         </div>
       )}
 
-      {/* Create Job Button */}
-      <div className="flex justify-end animate-fade-in-up" style={{animationDelay: '0.2s'}}>
-        <button
-          onClick={() => {
-            setSelectedJob(null);
-            setFormData({
-              title: '',
-              jobType: '',
-              description: '',
-              assignedTalentId: '',
-              dueDate: '',
-              status: 'open'
-            });
-            setShowForm(true);
-          }}
-          className="group px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-105 relative overflow-hidden"
-        >
-          <span className="absolute inset-0 bg-gradient-to-r from-blue-700 to-purple-700 opacity-0 group-hover:opacity-100 transition-opacity"></span>
-          <span className="relative z-10 inline-flex items-center gap-2">
-            <span className="text-xl">+</span>
-            Create Job
-          </span>
-        </button>
-      </div>
-
+      {/* Job List - Only show in list view */}
+      {view === 'list' && (
+      <>
       {/* Job List - Desktop Table View */}
       <div className="hidden lg:block bg-gradient-to-br from-gray-900/40 to-gray-800/40 backdrop-blur-lg rounded-xl border border-gray-700/50 overflow-hidden animate-fade-in-up" style={{animationDelay: '0.3s'}}>
         <div className="overflow-x-auto">
@@ -467,21 +522,21 @@ export default function JobsPage() {
           ))
         )}
       </div>
+      </>
+      )}
 
-      {/* Create/Edit Form Modal */}
-      {showForm && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl border-2 border-blue-500/30 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl shadow-blue-500/20 animate-scale-in">
-            <div className="p-6 border-b border-gray-700 bg-gradient-to-r from-blue-900/20 to-purple-900/20">
-              <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-                <span className="text-3xl">{selectedJob ? '✏️' : '➕'}</span>
-                {selectedJob ? 'Edit Job' : 'Create Job'}
-              </h2>
-            </div>
+      {/* Create/Edit Form - Full Page */}
+      {(view === 'add' || view === 'edit') && (
+        <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-lg rounded-2xl border border-purple-500/20 p-8 shadow-xl animate-fade-in-up">
+          <h2 className="text-3xl font-bold text-white mb-8 flex items-center gap-3">
+            <span className="text-3xl">{view === 'edit' ? '✏️' : '➕'}</span>
+            {view === 'edit' ? 'Edit Job' : 'Create New Job'}
+          </h2>
             
-            <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-sm font-bold text-gray-200 mb-3 flex items-center gap-2">
+                  <span className="text-lg">📋</span>
                   Job Title <span className="text-red-400">*</span>
                 </label>
                 <input
@@ -489,52 +544,77 @@ export default function JobsPage() {
                   required
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-blue-500 transition-colors"
+                  className="w-full px-5 py-4 bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-gray-700 rounded-xl text-white text-lg focus:border-purple-500 focus:ring-4 focus:ring-purple-500/30 transition-all placeholder-gray-500"
                   placeholder="Enter job title"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-sm font-bold text-gray-200 mb-3 flex items-center gap-2">
+                  <span className="text-lg">🏷️</span>
                   Job Type <span className="text-red-400">*</span>
                 </label>
-                <div className="relative" ref={jobTypeRef}>
+                <input
+                  type="text"
+                  required
+                  value={formData.jobType}
+                  onChange={(e) => setFormData({ ...formData, jobType: e.target.value })}
+                  className="w-full px-5 py-4 bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-gray-700 rounded-xl text-white text-lg focus:border-purple-500 focus:ring-4 focus:ring-purple-500/30 transition-all placeholder-gray-500"
+                  placeholder="e.g., Data Labeling, Operations, Service"
+                />
+              </div>
+
+              <div className="relative z-10">
+                <label className="block text-sm font-bold text-gray-200 mb-3 flex items-center gap-2">
+                  <span className="text-lg">⭐</span>
+                  Required Skill <span className="text-red-400">*</span>
+                </label>
+                <div className="relative" ref={requiredSkillRef}>
                   <button
                     type="button"
-                    onClick={() => setIsJobTypeOpen(!isJobTypeOpen)}
-                    className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-xl text-white text-left focus:outline-none focus:border-blue-500 transition-colors flex items-center justify-between"
+                    onClick={() => setIsRequiredSkillOpen(!isRequiredSkillOpen)}
+                    className="w-full px-5 py-4 bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-gray-700 rounded-xl text-white text-lg hover:border-gray-600 transition-all text-left flex items-center justify-between group"
                   >
-                    <span>
-                      {formData.jobType ? (
-                        <span className="flex items-center gap-2">
-                          {jobTypeOptions.find(opt => opt.value === formData.jobType)?.icon}
-                          {jobTypeOptions.find(opt => opt.value === formData.jobType)?.label}
-                        </span>
+                    <div className="flex items-center gap-3">
+                      {formData.requiredSkill ? (
+                        <>
+                          <span className="text-2xl group-hover:scale-110 transition-transform">
+                            {skillTypeOptions.find(opt => opt.value === formData.requiredSkill)?.icon}
+                          </span>
+                          <span className="font-semibold">{skillTypeOptions.find(opt => opt.value === formData.requiredSkill)?.label}</span>
+                        </>
                       ) : (
-                        <span className="text-gray-500">Select job type</span>
+                        <span className="text-gray-500">Select required skill</span>
                       )}
-                    </span>
-                    <span className="text-gray-400">{isJobTypeOpen ? '▲' : '▼'}</span>
+                    </div>
+                    <svg 
+                      className={`w-5 h-5 text-gray-400 transition-transform duration-300 ${isRequiredSkillOpen ? 'rotate-180' : ''}`} 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
                   </button>
                   
-                  {isJobTypeOpen && (
-                    <div className="absolute top-full left-0 right-0 mt-2 bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-blue-500/30 rounded-xl shadow-2xl shadow-blue-500/20 z-50 overflow-hidden">
-                      {jobTypeOptions.map((option) => (
+                  {isRequiredSkillOpen && (
+                    <div className="absolute z-[100] w-full mt-2 bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-purple-500/50 rounded-xl shadow-2xl shadow-purple-500/20 overflow-hidden animate-fade-in-up">
+                      {skillTypeOptions.map((option) => (
                         <button
                           key={option.value}
                           type="button"
                           onClick={() => {
-                            setFormData({ ...formData, jobType: option.value });
-                            setIsJobTypeOpen(false);
+                            setFormData({ ...formData, requiredSkill: option.value });
+                            setIsRequiredSkillOpen(false);
                           }}
-                          className="w-full px-4 py-3 text-left hover:bg-blue-500/10 transition-all border-b border-gray-700 last:border-b-0 flex items-center gap-3 group"
+                          className="w-full px-4 py-3 text-left hover:bg-purple-500/10 transition-all border-b border-gray-700 last:border-b-0 flex items-center gap-3 group"
                         >
-                          <span className="text-3xl">{option.icon}</span>
+                          <span className="text-3xl group-hover:scale-110 transition-transform">{option.icon}</span>
                           <div className="flex-1">
-                            <div className="text-white font-medium group-hover:text-blue-400 transition-colors flex items-center gap-2">
+                            <div className="text-white font-medium group-hover:text-purple-400 transition-colors flex items-center gap-2">
                               {option.label}
-                              {formData.jobType === option.value && (
-                                <span className="text-green-400 text-sm">✓</span>
+                              {formData.requiredSkill === option.value && (
+                                <span className="text-green-400 text-lg">✓</span>
                               )}
                             </div>
                             <div className="text-xs text-gray-400">{option.description}</div>
@@ -547,26 +627,28 @@ export default function JobsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Description
+                <label className="block text-sm font-bold text-gray-200 mb-3 flex items-center gap-2">
+                  <span className="text-lg">📝</span>
+                  Description <span className="text-gray-400 text-sm font-normal">(Optional)</span>
                 </label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={4}
-                  className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-blue-500 transition-colors resize-none"
-                  placeholder="Enter job description"
+                  className="w-full px-5 py-4 bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-gray-700 rounded-xl text-white text-lg focus:border-purple-500 focus:ring-4 focus:ring-purple-500/30 transition-all placeholder-gray-500 resize-none"
+                  placeholder="Describe what needs to be done..."
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Assign Talent
+                <label className="block text-sm font-bold text-gray-200 mb-3 flex items-center gap-2">
+                  <span className="text-lg">👤</span>
+                  Assign Talent <span className="text-gray-400 text-sm font-normal">(Optional)</span>
                 </label>
                 <select
                   value={formData.assignedTalentId}
                   onChange={(e) => setFormData({ ...formData, assignedTalentId: e.target.value })}
-                  className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-blue-500 transition-colors"
+                  className="w-full px-5 py-4 bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-gray-700 rounded-xl text-white text-lg focus:border-purple-500 focus:ring-4 focus:ring-purple-500/30 transition-all"
                 >
                   <option value="">Unassigned</option>
                   {talents.map((talent) => (
@@ -578,32 +660,29 @@ export default function JobsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Due Date
+                <label className="block text-sm font-bold text-gray-200 mb-3 flex items-center gap-2">
+                  <span className="text-lg">📅</span>
+                  Due Date <span className="text-gray-400 text-sm font-normal">(Optional)</span>
                 </label>
-                <div className="relative">
-                  <input
-                    type="date"
-                    value={formData.dueDate}
-                    onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                    className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:hover:opacity-100 [&::-webkit-calendar-picker-indicator]:transition-opacity [&::-webkit-calendar-picker-indicator]:bg-blue-500/20 [&::-webkit-calendar-picker-indicator]:p-2 [&::-webkit-calendar-picker-indicator]:rounded-lg"
-                    min={new Date().toISOString().split('T')[0]}
-                  />
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                    📅
-                  </div>
-                </div>
+                <input
+                  type="date"
+                  value={formData.dueDate}
+                  onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                  className="w-full px-5 py-4 bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-gray-700 rounded-xl text-white text-lg focus:border-purple-500 focus:ring-4 focus:ring-purple-500/30 transition-all"
+                  min={new Date().toISOString().split('T')[0]}
+                />
               </div>
 
               {selectedJob && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-sm font-bold text-gray-200 mb-3 flex items-center gap-2">
+                    <span className="text-lg">🔄</span>
                     Status
                   </label>
                   <select
                     value={formData.status}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                    className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-blue-500 transition-colors"
+                    className="w-full px-5 py-4 bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-gray-700 rounded-xl text-white text-lg focus:border-purple-500 focus:ring-4 focus:ring-purple-500/30 transition-all"
                   >
                     <option value="open">Open</option>
                     <option value="in_progress">In Progress</option>
@@ -612,41 +691,37 @@ export default function JobsPage() {
                 </div>
               )}
 
-              <div className="flex gap-3 pt-4">
+              <div className="flex gap-3 pt-6">
                 <button
                   type="submit"
-                  className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-105"
+                  className="flex-1 px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl font-bold text-lg hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg shadow-purple-500/50 hover:scale-105"
                 >
-                  {selectedJob ? '✓ Update Job' : '+ Create Job'}
+                  {selectedJob ? '✓ Update Job' : '➕ Create Job'}
                 </button>
                 <button
                   type="button"
                   onClick={() => {
-                    setShowForm(false);
+                    setView('list');
                     setSelectedJob(null);
                   }}
-                  className="px-6 py-3 bg-gradient-to-r from-gray-700 to-gray-800 text-white rounded-xl font-semibold hover:from-gray-600 hover:to-gray-700 transition-all hover:scale-105"
+                  className="px-8 py-4 bg-gradient-to-r from-gray-700 to-gray-800 text-white rounded-xl font-bold text-lg hover:from-gray-600 hover:to-gray-700 transition-all hover:scale-105"
                 >
                   ✕ Cancel
                 </button>
               </div>
             </form>
-          </div>
         </div>
       )}
 
-      {/* Job Detail Modal */}
-      {showDetail && selectedJob && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl border-2 border-blue-500/30 max-w-2xl w-full shadow-2xl shadow-blue-500/20 animate-scale-in">
-            <div className="p-6 border-b border-gray-700 bg-gradient-to-r from-blue-900/20 to-purple-900/20">
-              <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-                <span className="text-3xl">💼</span>
-                Job Details
-              </h2>
-            </div>
+      {/* Job Detail - Full Page */}
+      {view === 'detail' && selectedJob && (
+        <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-lg rounded-2xl border border-blue-500/20 p-8 shadow-xl animate-fade-in-up">
+          <h2 className="text-3xl font-bold text-white mb-8 flex items-center gap-3">
+            <span className="text-3xl">💼</span>
+            Job Details
+          </h2>
             
-            <div className="p-6 space-y-6">
+            <div className="space-y-6">
               <div>
                 <div className="text-sm text-gray-400 mb-1">Title</div>
                 <div className="text-xl font-bold text-white">{selectedJob.title}</div>
@@ -696,26 +771,25 @@ export default function JobsPage() {
                 {selectedJob.status !== 'completed' && (
                   <button
                     onClick={() => handleMarkCompleted(selectedJob.id)}
-                    className="flex-1 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-semibold hover:from-green-700 hover:to-emerald-700 transition-all shadow-lg shadow-green-500/30 hover:shadow-green-500/50 hover:scale-105"
+                    className="flex-1 px-8 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-bold text-lg hover:from-green-700 hover:to-emerald-700 transition-all shadow-lg shadow-green-500/50 hover:scale-105"
                   >
                     ✓ Mark as Completed
                   </button>
                 )}
                 <button
                   onClick={() => handleEdit(selectedJob)}
-                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-105"
+                  className="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-bold text-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg shadow-blue-500/50 hover:scale-105"
                 >
                   ✏️ Edit Job
                 </button>
                 <button
-                  onClick={() => setShowDetail(false)}
-                  className="px-6 py-3 bg-gradient-to-r from-gray-700 to-gray-800 text-white rounded-xl font-semibold hover:from-gray-600 hover:to-gray-700 transition-all hover:scale-105"
+                  onClick={() => setView('list')}
+                  className="px-8 py-4 bg-gradient-to-r from-gray-700 to-gray-800 text-white rounded-xl font-bold text-lg hover:from-gray-600 hover:to-gray-700 transition-all hover:scale-105"
                 >
                   ✕ Close
                 </button>
               </div>
             </div>
-          </div>
         </div>
       )}
 

@@ -56,6 +56,7 @@ def create_job():
         
         title = data.get('title')
         job_type = data.get('job_type')
+        required_skill = data.get('required_skill')
         description = data.get('description')
         assigned_talent_id = data.get('assigned_talent_id')
         due_date = data.get('due_date')
@@ -66,7 +67,8 @@ def create_job():
         job = JobsService.create_job(
             organization_id, 
             title, 
-            job_type, 
+            job_type,
+            required_skill,
             description, 
             assigned_talent_id, 
             due_date
@@ -92,6 +94,7 @@ def update_job(job_id):
             job_id,
             title=data.get('title'),
             job_type=data.get('job_type'),
+            required_skill=data.get('required_skill'),
             description=data.get('description'),
             assigned_talent_id=data.get('assigned_talent_id'),
             due_date=data.get('due_date'),
