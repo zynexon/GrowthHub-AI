@@ -649,14 +649,6 @@ const SettingsPage = () => {
 
                     {/* Action Buttons */}
                     <div className="flex flex-col sm:flex-row gap-3">
-                      {billingInfo.plan_type === 'free' && (
-                        <button
-                          onClick={() => window.location.href = '/pricing'}
-                          className="w-full sm:flex-1 px-4 sm:px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-purple-500/50 transition-all hover:scale-105 text-sm sm:text-base"
-                        >
-                          🚀 Upgrade Plan
-                        </button>
-                      )}
                       {(billingInfo.plan_type === 'pro' || billingInfo.plan_type === 'enterprise') && billingInfo.subscription_status === 'active' && (
                         <button
                           onClick={async () => {
