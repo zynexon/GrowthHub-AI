@@ -200,7 +200,14 @@ export default function CampaignsPage() {
                         {campaign.name}
                       </h3>
                       <p className="text-sm text-gray-400">
-                        {campaign.channel} {campaign.period ? `• ${campaign.period}` : ''}
+                        {campaign.channel}
+                        {campaign.start_date && campaign.end_date && (
+                          <span className="ml-2">
+                            • {new Date(campaign.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} 
+                            {' - '}
+                            {new Date(campaign.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </span>
+                        )}
                       </p>
                     </div>
                     <div className={`px-3 py-1 rounded-full text-sm font-medium border ${getPerformanceColor(campaign.performance)}`}>
