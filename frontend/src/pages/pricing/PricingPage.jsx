@@ -303,10 +303,10 @@ export default function PricingPage() {
                 </div>
                 <div>
                   <h3 className="text-white font-semibold mb-2 group-hover:text-pink-300 transition-colors">
-                    Can I try Pro features before upgrading?
+                    Is my data secure?
                   </h3>
                   <p className="text-gray-400 text-sm leading-relaxed">
-                    Start with our free plan and upgrade anytime. We also offer a 14-day trial of Pro features for new users.
+                    Yes, we use enterprise-grade security with encrypted data storage and Row Level Security to ensure your data is isolated and protected at all times.
                   </p>
                 </div>
               </div>
@@ -328,9 +328,14 @@ export default function PricingPage() {
               <button className="px-8 py-4 bg-white text-purple-600 rounded-xl font-semibold hover:bg-gray-100 transition-all hover:scale-105 shadow-xl">
                 Contact Sales
               </button>
-              <button className="px-8 py-4 bg-white/10 backdrop-blur-sm border-2 border-white/20 text-white rounded-xl font-semibold hover:bg-white/20 transition-all hover:scale-105">
+              <a 
+                href="https://drive.google.com/file/d/1sX3Jw82-27YNjsnGB9sNi3fikEufRkPZ/view?usp=drivesdk"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-8 py-4 bg-white/10 backdrop-blur-sm border-2 border-white/20 text-white rounded-xl font-semibold hover:bg-white/20 transition-all hover:scale-105 inline-block text-center"
+              >
                 View Documentation
-              </button>
+              </a>
             </div>
           </div>
         </div>

@@ -152,7 +152,7 @@ export default function LandingPage() {
               to="/signup" 
               className="group px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl font-semibold text-lg hover:from-purple-700 hover:to-blue-700 transition-all shadow-2xl shadow-purple-500/50 hover:scale-105 hover:shadow-purple-500/70 relative overflow-hidden"
             >
-              <span className="relative z-10">Start Free Trial</span>
+              <span className="relative z-10">Get Started</span>
               <div className="absolute inset-0 bg-gradient-to-r from-purple-700 to-blue-700 opacity-0 group-hover:opacity-100 transition-opacity"></div>
             </Link>
             <Link 
@@ -160,8 +160,7 @@ export default function LandingPage() {
               className="group px-8 py-4 bg-white/10 backdrop-blur-lg text-white rounded-xl font-semibold text-lg hover:bg-white/20 transition-all border border-white/20 hover:border-white/40 hover:scale-105"
             >
               <span className="inline-flex items-center gap-2">
-                View Demo 
-                <span className="group-hover:translate-x-1 transition-transform">→</span>
+                See How It Works →
               </span>
             </Link>
           </div>
@@ -359,7 +358,7 @@ export default function LandingPage() {
                   className="group px-8 py-4 bg-white text-purple-600 rounded-xl font-semibold text-lg hover:bg-gray-100 transition-all shadow-lg hover:scale-105 hover:shadow-xl"
                 >
                   <span className="inline-flex items-center gap-2">
-                    Start Free Trial
+                    Get Started
                     <span className="group-hover:translate-x-1 transition-transform">→</span>
                   </span>
                 </Link>
