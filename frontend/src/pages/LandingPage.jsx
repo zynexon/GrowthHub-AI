@@ -11,10 +11,17 @@ export default function LandingPage() {
   useEffect(() => {
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
     const accessToken = hashParams.get('access_token');
+    const type = hashParams.get('type');
     
     if (accessToken) {
-      // Redirect to auth callback handler
-      navigate('/auth/callback' + window.location.hash);
+      // Check if this is a password recovery link
+      if (type === 'recovery') {
+        // Redirect to reset password page
+        navigate('/reset-password' + window.location.hash);
+      } else {
+        // Regular email confirmation - redirect to auth callback handler
+        navigate('/auth/callback' + window.location.hash);
+      }
       return;
     }
   }, [navigate]);
