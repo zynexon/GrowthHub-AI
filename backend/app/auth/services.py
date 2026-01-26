@@ -305,3 +305,39 @@ class AuthService:
         
         except Exception as e:
             return {'error': str(e)}
+    
+    def forgot_password(self, email: str) -> Dict[str, Any]:
+        """Send password reset email."""
+        try:
+            # Supabase will send the reset email automatically
+            self.supabase.auth.reset_password_email(email, {
+                'redirect_to': 'http://localhost:5173/reset-password'
+            })
+            
+            return {'message': 'Password reset email sent'}
+        
+        except Exception as e:
+            return {'error': str(e)}
+    
+    def reset_password(self, token: str, password: str) -> Dict[str, Any]:
+        """Reset password with token."""
+        try:
+            # Set the session using the recovery token
+            session_response = self.supabase.auth.set_session(token, token)
+            
+            if not session_response.user:
+                return {'error': 'Invalid or expired reset token'}
+            
+            # Update password
+            update_response = self.supabase.auth.update_user({
+                'password': password
+            })
+            
+            if update_response.user:
+                return {'message': 'Password reset successfully'}
+            else:
+                return {'error': 'Failed to reset password'}
+        
+        except Exception as e:
+            print(f"[RESET PASSWORD] Error: {str(e)}")
+            return {'error': str(e)}

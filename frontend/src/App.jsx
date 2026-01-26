@@ -12,6 +12,8 @@ import DashboardLayout from './layouts/DashboardLayout'
 import LoginPage from './pages/auth/LoginPage'
 import SignupPage from './pages/auth/SignupPage'
 import AuthCallback from './pages/auth/AuthCallback'
+import ForgotPasswordPage from './pages/auth/ForgotPasswordPage'
+import ResetPasswordPage from './pages/auth/ResetPasswordPage'
 
 // Dashboard Pages
 import DashboardHome from './pages/dashboard/DashboardHome'
@@ -43,6 +45,8 @@ function App() {
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
         </Route>
 
         {/* Dashboard Routes */}
