@@ -11,6 +11,7 @@ import DashboardLayout from './layouts/DashboardLayout'
 // Auth Pages
 import LoginPage from './pages/auth/LoginPage'
 import SignupPage from './pages/auth/SignupPage'
+import AuthCallback from './pages/auth/AuthCallback'
 
 // Dashboard Pages
 import DashboardHome from './pages/dashboard/DashboardHome'
@@ -34,6 +35,9 @@ function App() {
       <Routes>
         {/* Landing Page */}
         <Route path="/" element={<LandingPage />} />
+        
+        {/* Auth Callback */}
+        <Route path="/auth/callback" element={<AuthCallback />} />
         
         {/* Auth Routes */}
         <Route element={<AuthLayout />}>

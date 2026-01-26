@@ -1,10 +1,23 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 
 export default function LandingPage() {
+  const navigate = useNavigate();
   const [scrollY, setScrollY] = useState(0)
   const [isVisible, setIsVisible] = useState({})
   const [selectedFeature, setSelectedFeature] = useState(null)
+
+  // Check for auth token in URL hash (from email confirmation)
+  useEffect(() => {
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const accessToken = hashParams.get('access_token');
+    
+    if (accessToken) {
+      // Redirect to auth callback handler
+      navigate('/auth/callback' + window.location.hash);
+      return;
+    }
+  }, [navigate]);
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY)
