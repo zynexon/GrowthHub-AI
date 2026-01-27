@@ -12,6 +12,15 @@ const api = axios.create({
 // Request interceptor to add auth token
 api.interceptors.request.use(
   async (config) => {
+    // Skip auth headers for public routes
+    const publicRoutes = ['/auth/signup', '/auth/login', '/auth/forgot-password', '/auth/reset-password']
+    const isPublicRoute = publicRoutes.some(route => config.url.includes(route))
+    
+    if (isPublicRoute) {
+      console.log('[API] Public route, skipping auth headers:', config.url)
+      return config
+    }
+    
     const authStorage = localStorage.getItem('auth-storage')
     console.log('[API] Auth storage:', authStorage)
     if (authStorage) {
