@@ -25,7 +25,7 @@ api.interceptors.request.use(
       if (session?.access_token && !currentOrganization) {
         console.log('[API] Fetching organization...')
         try {
-          const response = await fetch('http://localhost:5000/api/auth/organizations', {
+          const response = await fetch(`${API_URL}/auth/organizations`, {
             headers: {
               'Authorization': `Bearer ${session.access_token}`
             }
