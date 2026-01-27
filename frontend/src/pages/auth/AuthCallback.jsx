@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+
 export default function AuthCallback() {
   const navigate = useNavigate();
   const { setUser, setOrganization } = useAuthStore();
@@ -22,7 +24,7 @@ export default function AuthCallback() {
           }
           
           // Fetch user data from backend
-          const response = await fetch('http://localhost:5000/api/auth/me', {
+          const response = await fetch(`${API_URL}/auth/me`, {
             headers: {
               'Authorization': `Bearer ${accessToken}`
             }
