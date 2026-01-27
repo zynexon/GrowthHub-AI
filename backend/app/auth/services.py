@@ -309,9 +309,15 @@ class AuthService:
     def forgot_password(self, email: str) -> Dict[str, Any]:
         """Send password reset email."""
         try:
+            # Get frontend URL from config
+            frontend_url = current_app.config['FRONTEND_URL']
+            # If FRONTEND_URL is a list (from split), use the first one
+            if isinstance(frontend_url, list):
+                frontend_url = frontend_url[0]
+            
             # Supabase will send the reset email automatically
             self.supabase.auth.reset_password_email(email, {
-                'redirect_to': 'http://localhost:5173/reset-password'
+                'redirect_to': f'{frontend_url}/reset-password'
             })
             
             return {'message': 'Password reset email sent'}
