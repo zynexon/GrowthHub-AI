@@ -58,10 +58,18 @@ class AuthService:
                         }).execute()
                         print(f"[SIGNUP] User profile created successfully")
                     except Exception as e:
-                        print(f"[SIGNUP] Failed to create user profile: {str(e)}")
+                        error_msg = str(e)
+                        print(f"[SIGNUP] Failed to create user profile: {error_msg}")
                         import traceback
                         traceback.print_exc()
-                        return {'error': f'Failed to create user profile: {str(e)}'}
+                        
+                        # Parse common database errors
+                        if 'duplicate key value' in error_msg.lower() and 'users_email_key' in error_msg:
+                            return {'error': 'This email address is already registered. Please try logging in instead.'}
+                        elif 'duplicate key' in error_msg.lower():
+                            return {'error': 'An account with these details already exists.'}
+                        else:
+                            return {'error': 'Failed to create account. Please try again.'}
                 
                 # Check if user already has an organization
                 existing_org = admin.table('user_organizations').select('*, organizations(*)').eq('user_id', user_id).execute()
@@ -131,13 +139,27 @@ class AuthService:
                         'organization': org
                     }
             
-            return {'error': 'Signup failed'}
+            return {'error': 'Signup failed. Please try again.'}
         
         except Exception as e:
             import traceback
-            print(f"Signup error: {str(e)}")
+            error_msg = str(e)
+            print(f"Signup error: {error_msg}")
             print(traceback.format_exc())
-            return {'error': str(e)}
+            
+            # Parse common Supabase Auth errors
+            if 'User already registered' in error_msg:
+                return {'error': 'This email is already registered. Please try logging in instead.'}
+            elif 'Email rate limit exceeded' in error_msg:
+                return {'error': 'Too many signup attempts. Please try again later.'}
+            elif 'Invalid email' in error_msg:
+                return {'error': 'Please enter a valid email address.'}
+            elif 'Password should be at least' in error_msg:
+                return {'error': 'Password must be at least 6 characters long.'}
+            elif 'sending confirmation email' in error_msg.lower():
+                return {'error': 'Unable to send confirmation email. Please check your email address and try again.'}
+            else:
+                return {'error': 'Unable to create account. Please try again later.'}
     
     def login(self, email: str, password: str) -> Dict[str, Any]:
         """Authenticate user and fetch their organization."""
@@ -182,10 +204,20 @@ class AuthService:
                     'organization': organization
                 }
             
-            return {'error': 'Login failed'}
+            return {'error': 'Login failed. Please try again.'}
         
         except Exception as e:
-            return {'error': str(e)}
+            error_msg = str(e)
+            
+            # Parse common login errors
+            if 'Invalid login credentials' in error_msg or 'invalid_grant' in error_msg:
+                return {'error': 'Invalid email or password. Please check your credentials and try again.'}
+            elif 'Email not confirmed' in error_msg:
+                return {'error': 'Please confirm your email address before logging in. Check your inbox for the confirmation link.'}
+            elif 'Too many requests' in error_msg or 'rate limit' in error_msg.lower():
+                return {'error': 'Too many login attempts. Please try again in a few minutes.'}
+            else:
+                return {'error': 'Unable to log in. Please try again later.'}
     
     def logout(self, token: str) -> Dict[str, Any]:
         """Logout user."""
@@ -320,10 +352,19 @@ class AuthService:
                 'redirect_to': f'{frontend_url}/reset-password'
             })
             
-            return {'message': 'Password reset email sent'}
+            return {'message': 'If an account exists with this email, a password reset link has been sent.'}
         
         except Exception as e:
-            return {'error': str(e)}
+            error_msg = str(e)
+            
+            # Parse common errors
+            if 'rate limit' in error_msg.lower() or 'too many' in error_msg.lower():
+                return {'error': 'Too many reset attempts. Please try again in a few minutes.'}
+            elif 'sending' in error_msg.lower() and 'email' in error_msg.lower():
+                return {'error': 'Unable to send reset email. Please try again later.'}
+            else:
+                # Don't reveal if email exists for security
+                return {'message': 'If an account exists with this email, a password reset link has been sent.'}
     
     def reset_password(self, token: str, password: str) -> Dict[str, Any]:
         """Reset password with token."""
@@ -332,7 +373,7 @@ class AuthService:
             session_response = self.supabase.auth.set_session(token, token)
             
             if not session_response.user:
-                return {'error': 'Invalid or expired reset token'}
+                return {'error': 'Invalid or expired reset link. Please request a new password reset.'}
             
             # Update password
             update_response = self.supabase.auth.update_user({
@@ -340,10 +381,18 @@ class AuthService:
             })
             
             if update_response.user:
-                return {'message': 'Password reset successfully'}
+                return {'message': 'Password reset successfully. You can now log in with your new password.'}
             else:
-                return {'error': 'Failed to reset password'}
+                return {'error': 'Failed to reset password. Please try again.'}
         
         except Exception as e:
-            print(f"[RESET PASSWORD] Error: {str(e)}")
-            return {'error': str(e)}
+            error_msg = str(e)
+            print(f"[RESET PASSWORD] Error: {error_msg}")
+            
+            # Parse common errors
+            if 'invalid' in error_msg.lower() and 'token' in error_msg.lower():
+                return {'error': 'Invalid or expired reset link. Please request a new password reset.'}
+            elif 'password should be at least' in error_msg.lower():
+                return {'error': 'Password must be at least 6 characters long.'}
+            else:
+                return {'error': 'Unable to reset password. Please try again or request a new reset link.'}
