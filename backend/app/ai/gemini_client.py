@@ -10,30 +10,32 @@ class GeminiClient:
     
     def __init__(self):
         # Try to get from Flask config first, fallback to os.getenv
+        # Check both GOOGLE_API_KEY and GOOGLE_GEMINI_API_KEY for compatibility
         try:
             self.api_key = current_app.config.get('GOOGLE_GEMINI_API_KEY')
             print("[GeminiClient] Loaded API key from Flask config")
         except RuntimeError:
-            # No app context, fallback to environment variable
-            self.api_key = os.getenv('GOOGLE_GEMINI_API_KEY')
+            # No app context, fallback to environment variables
+            # Try both variable names for compatibility
+            self.api_key = os.getenv('GOOGLE_API_KEY') or os.getenv('GOOGLE_GEMINI_API_KEY')
             print("[GeminiClient] Loaded API key from os.getenv")
         
         # Also try direct os.getenv if Flask config was empty
         if not self.api_key:
-            self.api_key = os.getenv('GOOGLE_GEMINI_API_KEY')
+            self.api_key = os.getenv('GOOGLE_API_KEY') or os.getenv('GOOGLE_GEMINI_API_KEY')
             print("[GeminiClient] Fallback: Loaded API key from os.getenv")
             
         print(f"[GeminiClient] Initializing with API key: {'SET' if self.api_key else 'NOT SET'}")
         print(f"[GeminiClient] API key length: {len(self.api_key) if self.api_key else 0}")
         
         if not self.api_key:
-            print("[GeminiClient] ERROR: GOOGLE_GEMINI_API_KEY environment variable not set!")
-            # Don't raise here, let's see what happens
-            # raise ValueError("GOOGLE_GEMINI_API_KEY not configured")
+            print("[GeminiClient] ERROR: GOOGLE_API_KEY or GOOGLE_GEMINI_API_KEY environment variable not set!")
+            raise ValueError("GOOGLE_API_KEY or GOOGLE_GEMINI_API_KEY not configured. Please set one of these environment variables.")
             
         if self.api_key:
-            # Set as environment variable for the deprecated package
+            # Set both environment variables for maximum compatibility
             os.environ['GOOGLE_API_KEY'] = self.api_key
+            os.environ['GOOGLE_GEMINI_API_KEY'] = self.api_key
             genai.configure(api_key=self.api_key)
             print("[GeminiClient] Gemini API configured successfully")
         
