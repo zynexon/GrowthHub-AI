@@ -1,9 +1,14 @@
-import stripe
 import os
 from app.extensions import get_supabase_admin
+import stripe
 
-# Initialize Stripe
+# Initialize Stripe with the API key
 stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
+
+if not stripe.api_key:
+    print("[STRIPE] WARNING: STRIPE_SECRET_KEY not configured!")
+else:
+    print(f"[STRIPE] Configured with key: {stripe.api_key[:15]}...")
 
 class StripeService:
     
