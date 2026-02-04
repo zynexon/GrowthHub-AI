@@ -6,9 +6,17 @@ import stripe
 stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
 
 if not stripe.api_key:
-    print("[STRIPE] WARNING: STRIPE_SECRET_KEY not configured!")
+    print("[STRIPE] ❌ ERROR: STRIPE_SECRET_KEY not configured!")
 else:
-    print(f"[STRIPE] Configured with key: {stripe.api_key[:15]}...")
+    print(f"[STRIPE] ✓ Configured with key: {stripe.api_key[:15]}...")
+    print(f"[STRIPE] Key type: {'LIVE' if 'live' in stripe.api_key else 'TEST'}")
+    
+# Check if price ID is configured
+stripe_pro_price = os.getenv('STRIPE_PRO_PRICE_ID')
+if stripe_pro_price:
+    print(f"[STRIPE] ✓ Pro Price ID: {stripe_pro_price}")
+else:
+    print("[STRIPE] ⚠️  WARNING: STRIPE_PRO_PRICE_ID not configured!")
 
 class StripeService:
     
@@ -98,31 +106,50 @@ class StripeService:
         """Create a Stripe checkout session"""
         supabase = get_supabase_admin()
         
+        # Validate Stripe is configured
+        if not stripe.api_key:
+            print("[CHECKOUT] ERROR: Stripe API key not configured")
+            raise Exception('Payment system not configured')
+        
         # Get organization
         org = supabase.table('organizations').select('*').eq('id', organization_id).single().execute()
         if not org.data:
+            print(f"[CHECKOUT] ERROR: Organization {organization_id} not found")
             raise Exception('Organization not found')
         
         # Get plan details
         plan = StripeService.PLANS.get(plan_type)
         if not plan or plan_type == 'free':
+            print(f"[CHECKOUT] ERROR: Invalid plan type {plan_type}")
             raise Exception('Invalid plan type')
+        
+        # Validate price ID is configured
+        if not plan.get('stripe_price_id'):
+            print(f"[CHECKOUT] ERROR: No price ID configured for plan {plan_type}")
+            raise Exception(f'Price ID not configured for {plan_type} plan')
+        
+        print(f"[CHECKOUT] Using price ID: {plan['stripe_price_id']}")
         
         # Create or get Stripe customer
         customer_id = org.data.get('stripe_customer_id')
         if not customer_id:
+            print(f"[CHECKOUT] Creating new Stripe customer for org {organization_id}")
             customer = stripe.Customer.create(
                 email=org.data.get('email'),
                 metadata={'organization_id': organization_id}
             )
             customer_id = customer.id
+            print(f"[CHECKOUT] Created Stripe customer: {customer_id}")
             
             # Update organization with customer ID
             supabase.table('organizations').update({
                 'stripe_customer_id': customer_id
             }).eq('id', organization_id).execute()
+        else:
+            print(f"[CHECKOUT] Using existing Stripe customer: {customer_id}")
         
         # Create checkout session
+        print(f"[CHECKOUT] Creating checkout session with URLs: success={success_url}, cancel={cancel_url}")
         session = stripe.checkout.Session.create(
             customer=customer_id,
             payment_method_types=['card'],
@@ -139,6 +166,7 @@ class StripeService:
             }
         )
         
+        print(f"[CHECKOUT] Session created: {session.id}, URL: {session.url}")
         return {
             'session_id': session.id,
             'url': session.url

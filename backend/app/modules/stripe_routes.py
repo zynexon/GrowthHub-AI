@@ -53,6 +53,8 @@ def create_checkout_session():
         organization_id = request.organization_id
         plan_type = data.get('plan_type')
         
+        print(f"[CHECKOUT] Creating session for org {organization_id}, plan {plan_type}")
+        
         if not plan_type:
             return jsonify({'error': 'Plan type is required'}), 400
         
@@ -64,10 +66,20 @@ def create_checkout_session():
             cancel_url=data.get('cancel_url', f"{request.host_url}settings?canceled=true")
         )
         
+        print(f"[CHECKOUT] Session created successfully: {session.get('session_id')}")
         return jsonify(session), 200
     except Exception as e:
-        print(f"Error creating checkout session: {str(e)}")
+        error_msg = str(e)
+        print(f"[CHECKOUT] Error creating checkout session: {error_msg}")
         traceback.print_exc()
+        
+        # Return user-friendly error message
+        if 'No such price' in error_msg:
+            return jsonify({'error': 'Invalid price configuration. Please contact support.'}), 500
+        elif 'No API key' in error_msg or 'Invalid API Key' in error_msg:
+            return jsonify({'error': 'Payment system not configured. Please contact support.'}), 500
+        else:
+            return jsonify({'error': f'Failed to create checkout session: {error_msg}'}), 500
         return jsonify({'error': str(e)}), 500
 
 @stripe_bp.route('/create-portal-session', methods=['POST'])
