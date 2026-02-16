@@ -25,6 +25,7 @@ def create_app(config_name='development'):
     
     # Register blueprints
     from .auth.routes import auth_bp
+    from .auth.pkce_routes import pkce_bp
     from .modules.revops.routes import revops_bp
     from .modules.customer_health.routes import customer_health_bp
     from .modules.data_labeling.routes import data_labeling_bp
@@ -37,6 +38,7 @@ def create_app(config_name='development'):
     from .debug_routes import debug_bp
     
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
+    app.register_blueprint(pkce_bp, url_prefix='/api/auth')
     app.register_blueprint(revops_bp, url_prefix='/api/revops')
     app.register_blueprint(customer_health_bp, url_prefix='/api/customer-health')
     app.register_blueprint(data_labeling_bp, url_prefix='/api/data-labeling')

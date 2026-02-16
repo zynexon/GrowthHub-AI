@@ -27,14 +27,21 @@ class AuthService:
     def signup(self, email: str, password: str, full_name: str, organization_name: str) -> Dict[str, Any]:
         """Register a new user and create organization."""
         try:
-            # Create user in Supabase Auth
+            # Get frontend URL for email confirmation redirects
+            frontend_url = current_app.config['FRONTEND_URL']
+            if isinstance(frontend_url, list):
+                frontend_url = frontend_url[0]
+            
+            # Create user in Supabase Auth with PKCE-compatible redirect
             response = self.supabase.auth.sign_up({
                 'email': email,
                 'password': password,
                 'options': {
                     'data': {
                         'full_name': full_name
-                    }
+                    },
+                    # SECURE: Email confirmation will redirect to callback with CODE not TOKEN
+                    'email_redirect_to': f'{frontend_url}/auth/callback'
                 }
             })
             
@@ -347,6 +354,7 @@ class AuthService:
             if isinstance(frontend_url, list):
                 frontend_url = frontend_url[0]
             
+            # SECURE: Password reset will redirect with CODE not TOKEN
             # Supabase will send the reset email automatically
             self.supabase.auth.reset_password_email(email, {
                 'redirect_to': f'{frontend_url}/reset-password'
@@ -396,3 +404,64 @@ class AuthService:
                 return {'error': 'Password must be at least 6 characters long.'}
             else:
                 return {'error': 'Unable to reset password. Please try again or request a new reset link.'}
+
+    def exchange_code_for_session(self, code: str) -> Dict[str, Any]:
+        """
+        Exchange authorization code for session tokens (PKCE flow).
+        This keeps tokens server-side and never exposes them in URLs.
+        """
+        try:
+            print(f"[EXCHANGE_CODE] Exchanging authorization code...")
+            
+            # Exchange the code for a session
+            response = self.supabase.auth.exchange_code_for_session({
+                'auth_code': code
+            })
+            
+            if not response.session or not response.user:
+                return {'error': 'Invalid or expired authorization code'}
+            
+            # Get user's organization
+            admin = self.supabase_admin
+            user_orgs = admin.table('user_organizations')\
+                .select('*, organizations(*)')\
+                .eq('user_id', response.user.id)\
+                .execute()
+            
+            organization = None
+            if user_orgs.data and len(user_orgs.data) > 0:
+                organization = user_orgs.data[0]['organizations']
+            
+            # Convert to serializable format
+            user_dict = {
+                'id': response.user.id,
+                'email': response.user.email,
+                'user_metadata': response.user.user_metadata,
+                'created_at': response.user.created_at.isoformat() if response.user.created_at else None
+            }
+            
+            session_dict = {
+                'access_token': response.session.access_token,
+                'refresh_token': response.session.refresh_token,
+                'expires_in': response.session.expires_in,
+                'token_type': response.session.token_type
+            }
+            
+            print(f"[EXCHANGE_CODE] Successfully exchanged code for session")
+            
+            return {
+                'user': user_dict,
+                'session': session_dict,
+                'organization': organization
+            }
+            
+        except Exception as e:
+            error_msg = str(e)
+            print(f"[EXCHANGE_CODE] Error: {error_msg}")
+            import traceback
+            traceback.print_exc()
+            
+            if 'invalid' in error_msg.lower() or 'expired' in error_msg.lower():
+                return {'error': 'Invalid or expired authorization code. Please try again.'}
+            else:
+                return {'error': 'Failed to verify authorization. Please try again.'}

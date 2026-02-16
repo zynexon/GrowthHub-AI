@@ -12,16 +12,44 @@ export default function ResetPasswordPage() {
   const [accessToken, setAccessToken] = useState('')
 
   useEffect(() => {
-    // Extract access token from URL hash
-    const hashParams = new URLSearchParams(window.location.hash.substring(1))
-    const token = hashParams.get('access_token')
+    // SECURE: Extract authorization code from query params (not hash!)
+    const urlParams = new URLSearchParams(window.location.search)
+    const code = urlParams.get('code')
     
-    if (token) {
-      setAccessToken(token)
+    if (code) {
+      // Exchange code for access token securely via backend
+      exchangeCodeForToken(code)
     } else {
-      setError('Invalid or expired reset link')
+      setError('Invalid or expired reset link. Please request a new password reset.')
     }
   }, [])
+
+  const exchangeCodeForToken = async (code) => {
+    try {
+      const response = await fetch(`${API_URL}/auth/verify-code`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ code })
+      })
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}))
+        throw new Error(data.error || 'Failed to verify reset link')
+      }
+
+      const data = await response.json()
+      if (data.session && data.session.access_token) {
+        setAccessToken(data.session.access_token)
+      } else {
+        throw new Error('Invalid response from server')
+      }
+    } catch (err) {
+      console.error('[RESET_PASSWORD] Error exchanging code:', err)
+      setError('Invalid or expired reset link. Please request a new password reset.')
+    }
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
