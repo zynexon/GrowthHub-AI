@@ -10,6 +10,7 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [accessToken, setAccessToken] = useState('')
+  const [verifyingToken, setVerifyingToken] = useState(true) // Add loading state for token verification
 
   useEffect(() => {
     // SECURE: Extract authorization code from query params (not hash!)
@@ -22,13 +23,18 @@ export default function ResetPasswordPage() {
     
     if (code) {
       // New PKCE flow: Exchange code for access token securely via backend
+      // Clear the code from URL immediately
+      window.history.replaceState({}, document.title, window.location.pathname)
       exchangeCodeForToken(code)
     } else if (oldToken) {
       // Old flow: Direct token in URL (less secure, but fallback for old emails)
       console.warn('[RESET_PASSWORD] Using legacy token from hash - PKCE not enabled')
+      // IMPORTANT: Clear the token from URL immediately after extracting
+      window.history.replaceState({}, document.title, window.location.pathname)
       setAccessToken(oldToken)
+      setVerifyingToken(false) // Token verified
     } else {
-      setError('Invalid or expired reset link. Please request a new password reset.')
+      setVerifyingToken(false)
     }
   }, [])
 
@@ -50,12 +56,13 @@ export default function ResetPasswordPage() {
       const data = await response.json()
       if (data.session && data.session.access_token) {
         setAccessToken(data.session.access_token)
+        setVerifyingToken(false) // Token verified successfully
       } else {
         throw new Error('Invalid response from server')
       }
     } catch (err) {
       console.error('[RESET_PASSWORD] Error exchanging code:', err)
-      setError('Invalid or expired reset link. Please request a new password reset.')
+      setVerifyingToken(false)
     }
   }
 
@@ -100,7 +107,7 @@ export default function ResetPasswordPage() {
     }
   }
 
-  if (!accessToken) {
+  if (!accessToken && !verifyingToken) {
     return (
       <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-lg rounded-2xl p-8 border border-red-500/20 shadow-2xl">
         <div className="text-center">
@@ -117,6 +124,21 @@ export default function ResetPasswordPage() {
           >
             Request New Link
           </Link>
+        </div>
+      </div>
+    )
+  }
+
+  // Show loading state while verifying token
+  if (verifyingToken) {
+    return (
+      <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-lg rounded-2xl p-8 border border-purple-500/20 shadow-2xl">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center text-white text-2xl mx-auto mb-4 animate-pulse">
+            🔐
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-3">Verifying Reset Link...</h2>
+          <p className="text-gray-400">Please wait</p>
         </div>
       </div>
     )
