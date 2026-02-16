@@ -355,8 +355,8 @@ class AuthService:
                 frontend_url = frontend_url[0]
             
             # SECURE: Password reset will redirect with CODE not TOKEN
-            # Supabase will send the reset email automatically
-            self.supabase.auth.reset_password_email(email, {
+            # Using reset_password_for_email (correct method name)
+            self.supabase.auth.reset_password_for_email(email, {
                 'redirect_to': f'{frontend_url}/reset-password'
             })
             

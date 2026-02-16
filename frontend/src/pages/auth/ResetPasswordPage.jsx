@@ -16,9 +16,17 @@ export default function ResetPasswordPage() {
     const urlParams = new URLSearchParams(window.location.search)
     const code = urlParams.get('code')
     
+    // FALLBACK: Check for old hash-based token (backward compatibility)
+    const hashParams = new URLSearchParams(window.location.hash.substring(1))
+    const oldToken = hashParams.get('access_token')
+    
     if (code) {
-      // Exchange code for access token securely via backend
+      // New PKCE flow: Exchange code for access token securely via backend
       exchangeCodeForToken(code)
+    } else if (oldToken) {
+      // Old flow: Direct token in URL (less secure, but fallback for old emails)
+      console.warn('[RESET_PASSWORD] Using legacy token from hash - PKCE not enabled')
+      setAccessToken(oldToken)
     } else {
       setError('Invalid or expired reset link. Please request a new password reset.')
     }
