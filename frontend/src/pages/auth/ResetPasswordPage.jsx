@@ -11,6 +11,7 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState('')
   const [accessToken, setAccessToken] = useState('')
   const [verifyingToken, setVerifyingToken] = useState(true) // Add loading state for token verification
+  const [tokenValidated, setTokenValidated] = useState(false) // Track if token was validated
 
   useEffect(() => {
     // SECURE: Extract authorization code from query params (not hash!)
@@ -23,20 +24,48 @@ export default function ResetPasswordPage() {
     
     if (code) {
       // New PKCE flow: Exchange code for access token securely via backend
-      // Clear the code from URL immediately
+      // Clear the code from URL immediately to prevent reuse
       window.history.replaceState({}, document.title, window.location.pathname)
+      console.log('[RESET_PASSWORD] 🔒 Cleared reset code from URL')
       exchangeCodeForToken(code)
     } else if (oldToken) {
       // Old flow: Direct token in URL (less secure, but fallback for old emails)
-      console.warn('[RESET_PASSWORD] Using legacy token from hash - PKCE not enabled')
-      // IMPORTANT: Clear the token from URL immediately after extracting
+      console.warn('[RESET_PASSWORD] Using legacy token from hash')
+      // IMPORTANT: Clear the token from URL immediately after extracting to prevent reuse
       window.history.replaceState({}, document.title, window.location.pathname)
-      setAccessToken(oldToken)
-      setVerifyingToken(false) // Token verified
+      console.log('[RESET_PASSWORD] 🔒 Cleared reset token from URL')
+      // Validate the token before allowing password reset
+      validateToken(oldToken)
     } else {
+      // No token found - will show invalid link screen
+      console.log('[RESET_PASSWORD] No reset token found in URL')
       setVerifyingToken(false)
     }
   }, [])
+
+  const validateToken = async (token) => {
+    try {
+      // Validate the token by trying to get user info
+      const response = await fetch(`${API_URL}/auth/me`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (response.ok) {
+        setAccessToken(token)
+        setTokenValidated(true)
+        setVerifyingToken(false)
+      } else {
+        setError('This password reset link has expired or is invalid. Please request a new one.')
+        setVerifyingToken(false)
+      }
+    } catch (err) {
+      console.error('[RESET_PASSWORD] Token validation error:', err)
+      setError('Unable to validate reset link. Please request a new one.')
+      setVerifyingToken(false)
+    }
+  }
 
   const exchangeCodeForToken = async (code) => {
     try {
@@ -50,18 +79,22 @@ export default function ResetPasswordPage() {
 
       if (!response.ok) {
         const data = await response.json().catch(() => ({}))
-        throw new Error(data.error || 'Failed to verify reset link')
+        setError(data.error || 'This password reset link has expired or is invalid. Please request a new one.')
+        setVerifyingToken(false)
+        return
       }
 
       const data = await response.json()
       if (data.session && data.session.access_token) {
-        setAccessToken(data.session.access_token)
-        setVerifyingToken(false) // Token verified successfully
+        // Validate the token before allowing password reset
+        await validateToken(data.session.access_token)
       } else {
-        throw new Error('Invalid response from server')
+        setError('Invalid response from server. Please request a new reset link.')
+        setVerifyingToken(false)
       }
     } catch (err) {
       console.error('[RESET_PASSWORD] Error exchanging code:', err)
+      setError('Unable to verify reset link. Please request a new one.')
       setVerifyingToken(false)
     }
   }
@@ -95,19 +128,30 @@ export default function ResetPasswordPage() {
       const data = await response.json()
 
       if (response.ok) {
+        // Invalidate the token locally to prevent reuse
+        setAccessToken('')
+        setTokenValidated(false)
+        console.log('[RESET_PASSWORD] ✅ Password reset successful, token invalidated')
+        
         // Success - redirect to login with success message
         navigate('/login?reset=success')
       } else {
-        setError(data.error || 'Failed to reset password')
+        setError(data.error || 'Failed to reset password. This link may have already been used or expired.')
+        // If token is invalid, clear it
+        if (data.error && (data.error.includes('Invalid') || data.error.includes('expired'))) {
+          setAccessToken('')
+          setTokenValidated(false)
+        }
       }
     } catch (err) {
-      setError('Failed to reset password. Please try again.')
+      setError('Failed to reset password. Please try again or request a new reset link.')
     } finally {
       setLoading(false)
     }
   }
 
-  if (!accessToken && !verifyingToken) {
+  // Show invalid link screen if no token or token not validated
+  if ((!accessToken || !tokenValidated) && !verifyingToken) {
     return (
       <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-lg rounded-2xl p-8 border border-red-500/20 shadow-2xl">
         <div className="text-center">
@@ -116,7 +160,7 @@ export default function ResetPasswordPage() {
           </div>
           <h2 className="text-2xl font-bold text-white mb-3">Invalid Reset Link</h2>
           <p className="text-gray-400 mb-6">
-            This password reset link is invalid or has expired.
+            This password reset link is invalid, has expired, or has already been used.
           </p>
           <Link
             to="/forgot-password"

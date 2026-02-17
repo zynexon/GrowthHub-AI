@@ -240,21 +240,41 @@ class AuthService:
         try:
             user = self.supabase.auth.get_user(token)
             
-            if user:
+            if user and user.user:
+                # Use admin client to bypass RLS
+                admin = self.supabase_admin
+                
                 # Get user's organizations
-                orgs = self.supabase.table('user_organizations')\
+                user_orgs = admin.table('user_organizations')\
                     .select('*, organizations(*)')\
                     .eq('user_id', user.user.id)\
                     .execute()
                 
+                # Get the first organization (primary org)
+                organization = None
+                if user_orgs.data and len(user_orgs.data) > 0:
+                    organization = user_orgs.data[0]['organizations']
+                
+                # Convert user object to dict
+                user_dict = {
+                    'id': user.user.id,
+                    'email': user.user.email,
+                    'user_metadata': user.user.user_metadata,
+                    'created_at': user.user.created_at.isoformat() if user.user.created_at else None
+                }
+                
                 return {
-                    'user': user.user,
-                    'organizations': orgs.data
+                    'user': user_dict,
+                    'organization': organization,
+                    'organizations': user_orgs.data
                 }
             
             return {'error': 'User not found'}
         
         except Exception as e:
+            import traceback
+            print(f"Get user profile error: {str(e)}")
+            print(traceback.format_exc())
             return {'error': str(e)}
     
     def get_user_organizations(self, token: str) -> Dict[str, Any]:
@@ -375,13 +395,19 @@ class AuthService:
                 return {'message': 'If an account exists with this email, a password reset link has been sent.'}
     
     def reset_password(self, token: str, password: str) -> Dict[str, Any]:
-        """Reset password with token."""
+        """Reset password with token. Token is single-use and invalidated after successful reset."""
         try:
-            # Set the session using the recovery token
+            print(f"[RESET_PASSWORD] Attempting password reset with token")
+            
+            # Verify the token is valid by setting session
             session_response = self.supabase.auth.set_session(token, token)
             
             if not session_response.user:
+                print(f"[RESET_PASSWORD] Invalid token - no user found")
                 return {'error': 'Invalid or expired reset link. Please request a new password reset.'}
+            
+            user_email = session_response.user.email
+            print(f"[RESET_PASSWORD] Token valid for user: {user_email}")
             
             # Update password
             update_response = self.supabase.auth.update_user({
@@ -389,19 +415,35 @@ class AuthService:
             })
             
             if update_response.user:
+                print(f"[RESET_PASSWORD] ✅ Password updated successfully for {user_email}")
+                
+                # Sign out to invalidate all sessions/tokens for this user
+                # This ensures the recovery token cannot be reused
+                try:
+                    self.supabase.auth.sign_out()
+                    print(f"[RESET_PASSWORD] 🔒 User signed out, token invalidated")
+                except Exception as e:
+                    print(f"[RESET_PASSWORD] Warning: Could not sign out: {str(e)}")
+                
                 return {'message': 'Password reset successfully. You can now log in with your new password.'}
             else:
+                print(f"[RESET_PASSWORD] Failed to update password")
                 return {'error': 'Failed to reset password. Please try again.'}
         
         except Exception as e:
             error_msg = str(e)
-            print(f"[RESET PASSWORD] Error: {error_msg}")
+            print(f"[RESET_PASSWORD] Error: {error_msg}")
+            import traceback
+            traceback.print_exc()
             
             # Parse common errors
-            if 'invalid' in error_msg.lower() and 'token' in error_msg.lower():
-                return {'error': 'Invalid or expired reset link. Please request a new password reset.'}
+            if 'invalid' in error_msg.lower() and ('token' in error_msg.lower() or 'session' in error_msg.lower()):
+                print(f"[RESET_PASSWORD] Token validation failed - likely already used or expired")
+                return {'error': 'This password reset link has already been used or has expired. Please request a new password reset.'}
             elif 'password should be at least' in error_msg.lower():
                 return {'error': 'Password must be at least 6 characters long.'}
+            elif 'expired' in error_msg.lower():
+                return {'error': 'This password reset link has expired. Please request a new one.'}
             else:
                 return {'error': 'Unable to reset password. Please try again or request a new reset link.'}
 
