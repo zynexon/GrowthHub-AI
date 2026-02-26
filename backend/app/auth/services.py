@@ -374,16 +374,25 @@ class AuthService:
             if isinstance(frontend_url, list):
                 frontend_url = frontend_url[0]
             
-            # SECURE: Password reset will redirect with CODE not TOKEN
+            # Remove trailing slash if present to ensure clean URL construction
+            frontend_url = frontend_url.rstrip('/')
+            
+            print(f"[FORGOT_PASSWORD] Sending reset email to: {email}")
+            print(f"[FORGOT_PASSWORD] Redirect URL: {frontend_url}/reset-password")
+            
+            # SECURE: Password reset will redirect with CODE/TOKEN
             # Using reset_password_for_email (correct method name)
             self.supabase.auth.reset_password_for_email(email, {
                 'redirect_to': f'{frontend_url}/reset-password'
             })
             
+            print(f"[FORGOT_PASSWORD] ✅ Reset email sent successfully")
+            
             return {'message': 'If an account exists with this email, a password reset link has been sent.'}
         
         except Exception as e:
             error_msg = str(e)
+            print(f"[FORGOT_PASSWORD] Error: {error_msg}")
             
             # Parse common errors
             if 'rate limit' in error_msg.lower() or 'too many' in error_msg.lower():
