@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
@@ -11,8 +11,12 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState('')
   const [accessToken, setAccessToken] = useState('')
   const [tokenStatus, setTokenStatus] = useState('verifying') // 'verifying' | 'valid' | 'invalid'
+  const hasProcessedToken = useRef(false) // Prevent double execution in React Strict Mode
 
   useEffect(() => {
+    // Prevent double execution in React Strict Mode (development)
+    if (hasProcessedToken.current) return
+    hasProcessedToken.current = true
     // SECURE: Extract authorization code from query params (not hash!)
     const urlParams = new URLSearchParams(window.location.search)
     const code = urlParams.get('code')
@@ -164,8 +168,8 @@ export default function ResetPasswordPage() {
     )
   }
 
-  // Show invalid link screen if token is invalid or not present
-  if (tokenStatus === 'invalid' || !accessToken) {
+  // Show invalid link screen ONLY when explicitly marked as invalid
+  if (tokenStatus === 'invalid') {
     return (
       <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-lg rounded-2xl p-8 border border-red-500/20 shadow-2xl">
         <div className="text-center">
