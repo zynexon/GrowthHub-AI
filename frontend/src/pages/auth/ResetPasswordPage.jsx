@@ -10,8 +10,7 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [accessToken, setAccessToken] = useState('')
-  const [verifyingToken, setVerifyingToken] = useState(true) // Add loading state for token verification
-  const [tokenValidated, setTokenValidated] = useState(false) // Track if token was validated
+  const [tokenStatus, setTokenStatus] = useState('verifying') // 'verifying' | 'valid' | 'invalid'
 
   useEffect(() => {
     // SECURE: Extract authorization code from query params (not hash!)
@@ -39,7 +38,7 @@ export default function ResetPasswordPage() {
     } else {
       // No token found - will show invalid link screen
       console.log('[RESET_PASSWORD] No reset token found in URL')
-      setVerifyingToken(false)
+      setTokenStatus('invalid')
     }
   }, [])
 
@@ -53,17 +52,17 @@ export default function ResetPasswordPage() {
       })
 
       if (response.ok) {
+        // Update token and status atomically to prevent flash
         setAccessToken(token)
-        setTokenValidated(true)
-        setVerifyingToken(false)
+        setTokenStatus('valid')
       } else {
         setError('This password reset link has expired or is invalid. Please request a new one.')
-        setVerifyingToken(false)
+        setTokenStatus('invalid')
       }
     } catch (err) {
       console.error('[RESET_PASSWORD] Token validation error:', err)
       setError('Unable to validate reset link. Please request a new one.')
-      setVerifyingToken(false)
+      setTokenStatus('invalid')
     }
   }
 
@@ -80,7 +79,7 @@ export default function ResetPasswordPage() {
       if (!response.ok) {
         const data = await response.json().catch(() => ({}))
         setError(data.error || 'This password reset link has expired or is invalid. Please request a new one.')
-        setVerifyingToken(false)
+        setTokenStatus('invalid')
         return
       }
 
@@ -90,12 +89,12 @@ export default function ResetPasswordPage() {
         await validateToken(data.session.access_token)
       } else {
         setError('Invalid response from server. Please request a new reset link.')
-        setVerifyingToken(false)
+        setTokenStatus('invalid')
       }
     } catch (err) {
       console.error('[RESET_PASSWORD] Error exchanging code:', err)
       setError('Unable to verify reset link. Please request a new one.')
-      setVerifyingToken(false)
+      setTokenStatus('invalid')
     }
   }
 
@@ -130,7 +129,7 @@ export default function ResetPasswordPage() {
       if (response.ok) {
         // Invalidate the token locally to prevent reuse
         setAccessToken('')
-        setTokenValidated(false)
+        setTokenStatus('invalid')
         console.log('[RESET_PASSWORD] ✅ Password reset successful, token invalidated')
         
         // Success - redirect to login with success message
@@ -140,7 +139,7 @@ export default function ResetPasswordPage() {
         // If token is invalid, clear it
         if (data.error && (data.error.includes('Invalid') || data.error.includes('expired'))) {
           setAccessToken('')
-          setTokenValidated(false)
+          setTokenStatus('invalid')
         }
       }
     } catch (err) {
@@ -150,8 +149,23 @@ export default function ResetPasswordPage() {
     }
   }
 
-  // Show invalid link screen if no token or token not validated
-  if ((!accessToken || !tokenValidated) && !verifyingToken) {
+  // Show loading state while verifying token
+  if (tokenStatus === 'verifying') {
+    return (
+      <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-lg rounded-2xl p-8 border border-purple-500/20 shadow-2xl">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center text-white text-2xl mx-auto mb-4 animate-pulse">
+            🔐
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-3">Verifying Reset Link...</h2>
+          <p className="text-gray-400">Please wait</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show invalid link screen if token is invalid or not present
+  if (tokenStatus === 'invalid' || !accessToken) {
     return (
       <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-lg rounded-2xl p-8 border border-red-500/20 shadow-2xl">
         <div className="text-center">
@@ -168,21 +182,6 @@ export default function ResetPasswordPage() {
           >
             Request New Link
           </Link>
-        </div>
-      </div>
-    )
-  }
-
-  // Show loading state while verifying token
-  if (verifyingToken) {
-    return (
-      <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-lg rounded-2xl p-8 border border-purple-500/20 shadow-2xl">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center text-white text-2xl mx-auto mb-4 animate-pulse">
-            🔐
-          </div>
-          <h2 className="text-2xl font-bold text-white mb-3">Verifying Reset Link...</h2>
-          <p className="text-gray-400">Please wait</p>
         </div>
       </div>
     )
