@@ -489,7 +489,7 @@ const SettingsPage = () => {
                     </button>
                   </div>
                   {apiKeyStats && (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mt-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mt-6">
                       <div className="bg-gradient-to-br from-blue-600/20 to-blue-800/20 border border-blue-500/30 p-3 sm:p-4 rounded-lg">
                         <div className="text-xl sm:text-2xl font-bold text-white">{apiKeyStats.total_keys}</div>
                         <div className="text-xs sm:text-sm text-gray-400">Total Keys</div>
@@ -508,8 +508,8 @@ const SettingsPage = () => {
                       </div>
                     </div>
                   )}
-                  <div className="mt-6 overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
-                    <table className="w-full min-w-[600px]">
+                  <div className="mt-6 w-full overflow-x-auto">
+                    <table className="w-full">
                       <thead>
                         <tr className="border-b border-purple-500/20">
                           <th className="text-left py-3 px-2 sm:px-4 text-gray-400 font-medium text-xs sm:text-sm">Key</th>

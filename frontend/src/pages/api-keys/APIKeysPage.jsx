@@ -131,30 +131,30 @@ export default function APIKeysPage() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in-up">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-white mb-2">🔑 API Keys</h1>
-        <p className="text-gray-400">Manage API keys for external integrations and syndication</p>
+    <div className="space-y-4 sm:space-y-6 animate-fade-in-up w-full overflow-hidden">
+      <div className="mb-4 sm:mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">🔑 API Keys</h1>
+        <p className="text-sm sm:text-base text-gray-400">Manage API keys for external integrations and automations</p>
       </div>
 
       {/* Statistics Cards */}
       {statistics && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="bg-gradient-to-br from-blue-900/20 to-blue-800/20 backdrop-blur-lg rounded-xl p-6 border border-blue-500/20 hover:border-blue-500/40 transition-all">
-            <div className="text-blue-400 text-sm font-medium mb-2">Total Keys</div>
-            <div className="text-3xl font-bold text-white">{statistics.total_keys}</div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="bg-gradient-to-br from-blue-900/20 to-blue-800/20 backdrop-blur-lg rounded-xl p-4 border border-blue-500/20 hover:border-blue-500/40 transition-all">
+            <div className="text-blue-400 text-xs sm:text-sm font-medium mb-1">Total Keys</div>
+            <div className="text-2xl sm:text-3xl font-bold text-white">{statistics.total_keys}</div>
           </div>
-          <div className="bg-gradient-to-br from-green-900/20 to-green-800/20 backdrop-blur-lg rounded-xl p-6 border border-green-500/20 hover:border-green-500/40 transition-all">
-            <div className="text-green-400 text-sm font-medium mb-2">Active</div>
-            <div className="text-3xl font-bold text-white">{statistics.active_keys}</div>
+          <div className="bg-gradient-to-br from-green-900/20 to-green-800/20 backdrop-blur-lg rounded-xl p-4 border border-green-500/20 hover:border-green-500/40 transition-all">
+            <div className="text-green-400 text-xs sm:text-sm font-medium mb-1">Active</div>
+            <div className="text-2xl sm:text-3xl font-bold text-white">{statistics.active_keys}</div>
           </div>
-          <div className="bg-gradient-to-br from-red-900/20 to-red-800/20 backdrop-blur-lg rounded-xl p-6 border border-red-500/20 hover:border-red-500/40 transition-all">
-            <div className="text-red-400 text-sm font-medium mb-2">Revoked</div>
-            <div className="text-3xl font-bold text-white">{statistics.inactive_keys}</div>
+          <div className="bg-gradient-to-br from-red-900/20 to-red-800/20 backdrop-blur-lg rounded-xl p-4 border border-red-500/20 hover:border-red-500/40 transition-all">
+            <div className="text-red-400 text-xs sm:text-sm font-medium mb-1">Revoked</div>
+            <div className="text-2xl sm:text-3xl font-bold text-white">{statistics.inactive_keys}</div>
           </div>
-          <div className="bg-gradient-to-br from-purple-900/20 to-purple-800/20 backdrop-blur-lg rounded-xl p-6 border border-purple-500/20 hover:border-purple-500/40 transition-all">
-            <div className="text-purple-400 text-sm font-medium mb-2">Recently Used</div>
-            <div className="text-3xl font-bold text-white">{statistics.recently_used}</div>
+          <div className="bg-gradient-to-br from-purple-900/20 to-purple-800/20 backdrop-blur-lg rounded-xl p-4 border border-purple-500/20 hover:border-purple-500/40 transition-all">
+            <div className="text-purple-400 text-xs sm:text-sm font-medium mb-1">Recently Used</div>
+            <div className="text-2xl sm:text-3xl font-bold text-white">{statistics.recently_used}</div>
           </div>
         </div>
       )}
@@ -163,58 +163,57 @@ export default function APIKeysPage() {
       <div className="flex justify-end">
         <button
           onClick={() => setShowCreateModal(true)}
-          className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg hover:scale-105"
+          className="w-full lg:w-auto px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg hover:scale-105"
         >
-          + Create API Key
+          + Create New Key
         </button>
       </div>
 
-      {/* API Keys List */}
-      <div className="bg-gradient-to-br from-gray-900/40 to-gray-800/40 backdrop-blur-lg rounded-xl border border-gray-700/50 overflow-hidden">
-        <div className="overflow-x-auto">
+      {/* API Keys List - Desktop Table View */}
+      <div className="hidden lg:block bg-gradient-to-br from-gray-900/40 to-gray-800/40 backdrop-blur-lg rounded-xl border border-gray-700/50 overflow-hidden w-full">
+        <div className="overflow-x-auto w-full">
           <table className="w-full">
             <thead className="bg-gray-800/50">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Key</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Name</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Scopes</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Last Used</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Expires</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Actions</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Key</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Name</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Scopes</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Last Used</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Status</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-700/50">
               {apiKeys.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-12 text-center text-gray-400">
-                    No API keys yet. Create your first API key to enable external access!
+                  <td colSpan="6" className="px-4 py-12 text-center text-gray-400">
+                    No API keys yet. Create your first API key to get started!
                   </td>
                 </tr>
               ) : (
                 apiKeys.map((key) => (
                   <tr key={key.id} className="hover:bg-gray-800/30 transition-colors">
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-3 whitespace-nowrap">
                       <code className="text-blue-400 font-mono text-sm">{key.key_prefix}••••••••</code>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="text-white font-medium">{key.name}</div>
+                    <td className="px-4 py-3 max-w-[200px]">
+                      <div className="text-white font-medium truncate">{key.name}</div>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-wrap gap-1">
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap gap-1 min-w-[100px]">
                         {key.scopes.slice(0, 2).map((scope, idx) => (
-                          <span key={idx} className="px-2 py-1 bg-blue-500/20 text-blue-300 rounded text-xs">
+                          <span key={idx} className="px-2 py-1 bg-purple-500/20 text-purple-300 rounded text-xs whitespace-nowrap">
                             {scope}
                           </span>
                         ))}
                         {key.scopes.length > 2 && (
-                          <span className="px-2 py-1 bg-gray-500/20 text-gray-300 rounded text-xs">
+                          <span className="px-2 py-1 bg-gray-500/20 text-gray-300 rounded text-xs whitespace-nowrap">
                             +{key.scopes.length - 2}
                           </span>
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-3 whitespace-nowrap">
                       {key.last_used_at ? (
                         <span className="text-gray-300 text-sm">
                           {new Date(key.last_used_at).toLocaleDateString()}
@@ -223,39 +222,30 @@ export default function APIKeysPage() {
                         <span className="text-gray-500 text-sm">Never</span>
                       )}
                     </td>
-                    <td className="px-6 py-4">
-                      {key.expires_at ? (
-                        <span className="text-gray-300 text-sm">
-                          {new Date(key.expires_at).toLocaleDateString()}
-                        </span>
-                      ) : (
-                        <span className="text-gray-500 text-sm">Never</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-3 whitespace-nowrap">
                       {key.is_active ? (
-                        <span className="px-3 py-1 rounded-full text-xs font-medium border bg-green-500/20 text-green-300 border-green-500/30">
+                        <span className="px-3 py-1 rounded-full text-xs font-medium border bg-green-500/20 text-green-300 border-green-500/30 whitespace-nowrap">
                           Active
                         </span>
                       ) : (
-                        <span className="px-3 py-1 rounded-full text-xs font-medium border bg-red-500/20 text-red-300 border-red-500/30">
+                        <span className="px-3 py-1 rounded-full text-xs font-medium border bg-red-500/20 text-red-300 border-red-500/30 whitespace-nowrap">
                           Revoked
                         </span>
                       )}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-3 whitespace-nowrap">
                       <div className="flex gap-2">
                         {key.is_active && (
                           <button
                             onClick={() => handleRevoke(key.id)}
-                            className="px-3 py-1 bg-yellow-600/20 text-yellow-400 rounded-lg hover:bg-yellow-600/30 transition-colors text-sm"
+                            className="px-3 py-1 bg-yellow-600/20 text-yellow-400 rounded-lg hover:bg-yellow-600/30 transition-colors text-sm whitespace-nowrap"
                           >
                             Revoke
                           </button>
                         )}
                         <button
                           onClick={() => handleDelete(key.id)}
-                          className="px-3 py-1 bg-red-600/20 text-red-400 rounded-lg hover:bg-red-600/30 transition-colors text-sm"
+                          className="px-3 py-1 bg-red-600/20 text-red-400 rounded-lg hover:bg-red-600/30 transition-colors text-sm whitespace-nowrap"
                         >
                           Delete
                         </button>
@@ -269,15 +259,89 @@ export default function APIKeysPage() {
         </div>
       </div>
 
+      {/* API Keys List - Mobile Card View */}
+      <div className="lg:hidden space-y-4">
+        {apiKeys.length === 0 ? (
+          <div className="bg-gradient-to-br from-gray-900/40 to-gray-800/40 backdrop-blur-lg rounded-xl border border-gray-700/50 p-8 text-center text-gray-400">
+            No API keys yet. Create your first API key to get started!
+          </div>
+        ) : (
+          apiKeys.map((key) => (
+            <div key={key.id} className="bg-gradient-to-br from-gray-900/40 to-gray-800/40 backdrop-blur-lg rounded-xl border border-gray-700/50 p-4">
+              {/* Header with Name and Status */}
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-white font-semibold text-lg truncate">{key.name}</h3>
+                  <code className="text-blue-400 font-mono text-xs">{key.key_prefix}••••••••</code>
+                </div>
+                <div className="ml-2">
+                  {key.is_active ? (
+                    <span className="px-2 py-1 rounded-full text-xs font-medium border bg-green-500/20 text-green-300 border-green-500/30 whitespace-nowrap">
+                      Active
+                    </span>
+                  ) : (
+                    <span className="px-2 py-1 rounded-full text-xs font-medium border bg-red-500/20 text-red-300 border-red-500/30 whitespace-nowrap">
+                      Revoked
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Scopes */}
+              <div className="mb-3">
+                <div className="text-xs text-gray-400 mb-1">Scopes</div>
+                <div className="flex flex-wrap gap-1">
+                  {key.scopes.map((scope, idx) => (
+                    <span key={idx} className="px-2 py-1 bg-purple-500/20 text-purple-300 rounded text-xs">
+                      {scope}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Last Used */}
+              <div className="mb-3 text-sm">
+                <span className="text-gray-400">Last Used: </span>
+                {key.last_used_at ? (
+                  <span className="text-gray-300">
+                    {new Date(key.last_used_at).toLocaleDateString()}
+                  </span>
+                ) : (
+                  <span className="text-gray-500">Never</span>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-2 pt-3 border-t border-gray-700/50">
+                {key.is_active && (
+                  <button
+                    onClick={() => handleRevoke(key.id)}
+                    className="flex-1 px-3 py-2 bg-yellow-600/20 text-yellow-400 rounded-lg hover:bg-yellow-600/30 transition-colors text-sm font-medium"
+                  >
+                    Revoke
+                  </button>
+                )}
+                <button
+                  onClick={() => handleDelete(key.id)}
+                  className="flex-1 px-3 py-2 bg-red-600/20 text-red-400 rounded-lg hover:bg-red-600/30 transition-colors text-sm font-medium"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
       {/* Create API Key Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl border border-gray-700 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-700">
-              <h2 className="text-2xl font-bold text-white">Create API Key</h2>
+            <div className="p-4 sm:p-6 border-b border-gray-700">
+              <h2 className="text-xl sm:text-2xl font-bold text-white">Create API Key</h2>
             </div>
             
-            <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 sm:space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   Key Name <span className="text-red-400">*</span>
@@ -287,8 +351,8 @@ export default function APIKeysPage() {
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-blue-500 transition-colors"
-                  placeholder="e.g., Production API, Mobile App, Zapier Integration"
+                  className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-blue-500 transition-colors text-sm sm:text-base"
+                  placeholder="e.g., Production API"
                 />
               </div>
 
@@ -305,8 +369,8 @@ export default function APIKeysPage() {
                         onChange={() => toggleScope(option.value)}
                         className="mt-1"
                       />
-                      <div>
-                        <div className="text-white font-medium">{option.label}</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-white font-medium text-sm">{option.label}</div>
                         <div className="text-xs text-gray-400">{option.description}</div>
                       </div>
                     </label>
@@ -321,7 +385,7 @@ export default function APIKeysPage() {
                 <select
                   value={formData.expiresInDays || ''}
                   onChange={(e) => setFormData({ ...formData, expiresInDays: e.target.value ? parseInt(e.target.value) : null })}
-                  className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-blue-500 transition-colors"
+                  className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-blue-500 transition-colors text-sm sm:text-base"
                 >
                   {expirationOptions.map((option) => (
                     <option key={option.value || 'never'} value={option.value || ''}>
@@ -331,16 +395,16 @@ export default function APIKeysPage() {
                 </select>
               </div>
 
-              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
+              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3 sm:p-4">
                 <div className="flex gap-2">
-                  <span className="text-yellow-400">⚠️</span>
-                  <div className="text-sm text-yellow-300">
+                  <span className="text-yellow-400 text-sm">⚠️</span>
+                  <div className="text-xs sm:text-sm text-yellow-300">
                     <strong>Important:</strong> The API key will only be shown once. Make sure to copy and store it securely.
                   </div>
                 </div>
               </div>
 
-              <div className="flex gap-3 pt-4">
+              <div className="flex flex-col sm:flex-row gap-3 pt-4">
                 <button
                   type="submit"
                   className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all"
@@ -364,15 +428,15 @@ export default function APIKeysPage() {
       {showKeyModal && newApiKey && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl border border-gray-700 max-w-2xl w-full">
-            <div className="p-6 border-b border-gray-700">
-              <h2 className="text-2xl font-bold text-white">✅ API Key Created!</h2>
+            <div className="p-4 sm:p-6 border-b border-gray-700">
+              <h2 className="text-xl sm:text-2xl font-bold text-white">✅ API Key Created!</h2>
             </div>
             
-            <div className="p-6 space-y-6">
-              <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4">
+            <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+              <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-3 sm:p-4">
                 <div className="flex gap-2 mb-4">
-                  <span className="text-green-400">✓</span>
-                  <div className="text-sm text-green-300">
+                  <span className="text-green-400 text-sm">✓</span>
+                  <div className="text-xs sm:text-sm text-green-300">
                     Your API key has been created successfully. <strong>Copy it now - you won't see it again!</strong>
                   </div>
                 </div>
@@ -380,27 +444,27 @@ export default function APIKeysPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">API Key</label>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <input
                     type="text"
                     readOnly
                     value={newApiKey.api_key}
-                    className="flex-1 px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-xl text-white font-mono text-sm"
+                    className="flex-1 px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-xl text-white font-mono text-xs sm:text-sm"
                   />
                   <button
                     onClick={() => copyToClipboard(newApiKey.api_key)}
-                    className="px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all"
+                    className="px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all whitespace-nowrap"
                   >
                     📋 Copy
                   </button>
                 </div>
               </div>
 
-              <div className="bg-gray-800/30 rounded-xl p-4 space-y-2">
-                <div className="text-sm text-gray-400">Key Name: <span className="text-white">{newApiKey.name}</span></div>
-                <div className="text-sm text-gray-400">Scopes: <span className="text-white">{newApiKey.scopes.join(', ')}</span></div>
+              <div className="bg-gray-800/30 rounded-xl p-3 sm:p-4 space-y-2">
+                <div className="text-xs sm:text-sm text-gray-400">Key Name: <span className="text-white break-all">{newApiKey.name}</span></div>
+                <div className="text-xs sm:text-sm text-gray-400">Scopes: <span className="text-white break-all">{newApiKey.scopes.join(', ')}</span></div>
                 {newApiKey.expires_at && (
-                  <div className="text-sm text-gray-400">Expires: <span className="text-white">{new Date(newApiKey.expires_at).toLocaleDateString()}</span></div>
+                  <div className="text-xs sm:text-sm text-gray-400">Expires: <span className="text-white">{new Date(newApiKey.expires_at).toLocaleDateString()}</span></div>
                 )}
               </div>
 

@@ -48,7 +48,7 @@ class StripeService:
         },
         'pro': {
             'name': 'Pro',
-            'price': 4900,  # $49.00 in cents
+            'price': 2900,  # $29.00 in cents
             'stripe_price_id': os.getenv('STRIPE_PRO_PRICE_ID'),
             'features': [
                 'Up to 10 datasets',
