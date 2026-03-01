@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import stripeService from '../services/stripe.service'
 
 export default function UpgradeModal({ show, onClose, resourceType, currentPlan = 'free' }) {
@@ -91,13 +92,14 @@ export default function UpgradeModal({ show, onClose, resourceType, currentPlan 
     }
   }
 
-  return (
+  const modalContent = (
     <div 
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 overflow-y-auto" 
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] overflow-y-auto" 
       onClick={handleOverlayClick}
+      style={{ margin: 0 }}
     >
       <div className="min-h-screen px-4 py-8 flex items-center justify-center" onClick={handleOverlayClick}>
-        <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl border border-gray-700 max-w-2xl w-full animate-slide-in shadow-2xl">
+        <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl border border-gray-700 max-w-2xl w-full shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="p-8">
           {/* Icon and Title */}
           <div className="text-center mb-6">
@@ -192,4 +194,6 @@ export default function UpgradeModal({ show, onClose, resourceType, currentPlan 
     </div>
     </div>
   )
+
+  return createPortal(modalContent, document.body)
 }
