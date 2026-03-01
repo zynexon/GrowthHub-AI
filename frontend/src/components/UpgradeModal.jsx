@@ -1,8 +1,23 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import stripeService from '../services/stripe.service'
 
 export default function UpgradeModal({ show, onClose, resourceType, currentPlan = 'free' }) {
   const [loading, setLoading] = useState(false)
+
+  // Prevent background scrolling when modal is open
+  useEffect(() => {
+    if (show) {
+      // Save current overflow style
+      const originalOverflow = document.body.style.overflow
+      // Disable scrolling
+      document.body.style.overflow = 'hidden'
+      
+      // Re-enable scrolling when modal closes
+      return () => {
+        document.body.style.overflow = originalOverflow
+      }
+    }
+  }, [show])
 
   const resourceMessages = {
     datasets: {
@@ -69,9 +84,20 @@ export default function UpgradeModal({ show, onClose, resourceType, currentPlan 
 
   const info = resourceMessages[resourceType] || resourceMessages.datasets
 
+  const handleOverlayClick = (e) => {
+    // Close modal only if clicking the overlay itself, not the modal content
+    if (e.target === e.currentTarget) {
+      onClose()
+    }
+  }
+
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-      <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl border border-gray-700 max-w-2xl w-full animate-slide-in">
+    <div 
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 overflow-y-auto" 
+      onClick={handleOverlayClick}
+    >
+      <div className="min-h-screen px-4 py-8 flex items-center justify-center" onClick={handleOverlayClick}>
+        <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl border border-gray-700 max-w-2xl w-full animate-slide-in shadow-2xl">
         <div className="p-8">
           {/* Icon and Title */}
           <div className="text-center mb-6">
@@ -86,7 +112,7 @@ export default function UpgradeModal({ show, onClose, resourceType, currentPlan 
             <div className="bg-gradient-to-br from-purple-900/20 to-blue-900/20 border-2 border-purple-500/50 rounded-xl p-6">
               <div className="text-xs font-bold text-purple-400 mb-2">RECOMMENDED</div>
               <h4 className="text-xl font-bold text-white mb-2">Pro Plan</h4>
-              <div className="text-3xl font-bold text-white mb-4">$49<span className="text-sm text-gray-400">/mo</span></div>
+              <div className="text-3xl font-bold text-white mb-4">$29<span className="text-sm text-gray-400">/mo</span></div>
               <ul className="space-y-2 mb-6">
                 <li className="flex items-center gap-2 text-sm text-gray-300">
                   <span className="text-green-400">✓</span>
@@ -163,6 +189,7 @@ export default function UpgradeModal({ show, onClose, resourceType, currentPlan 
           </button>
         </div>
       </div>
+    </div>
     </div>
   )
 }
