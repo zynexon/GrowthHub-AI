@@ -93,7 +93,7 @@ export default function Sidebar({ isOpen, onClose }) {
 
       <div className="p-4 border-t border-purple-500/20">
         <div className="text-xs text-gray-500 text-center hover:text-gray-400 transition-colors cursor-default">
-          © 2025 GrowthHub AI
+          © 2026 GrowthHub AI
         </div>
       </div>
     </div>

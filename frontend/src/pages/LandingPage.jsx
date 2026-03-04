@@ -472,7 +472,7 @@ export default function LandingPage() {
               <span className="text-white font-bold">GrowthHub AI</span>
             </div>
             <div className="text-gray-400 text-sm">
-              © 2025 GrowthHub AI. All rights reserved.
+              © 2026 GrowthHub AI. All rights reserved.
             </div>
           </div>
         </div>

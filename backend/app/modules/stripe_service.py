@@ -75,7 +75,7 @@ class StripeService:
         },
         'enterprise': {
             'name': 'Enterprise',
-            'price': 19900,  # $199.00 in cents
+            'price': 11900,  # $119.00 in cents
             'stripe_price_id': os.getenv('STRIPE_ENTERPRISE_PRICE_ID'),
             'features': [
                 'Unlimited datasets',

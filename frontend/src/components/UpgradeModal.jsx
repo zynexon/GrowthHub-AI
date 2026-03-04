@@ -146,7 +146,7 @@ export default function UpgradeModal({ show, onClose, resourceType, currentPlan 
             <div className="bg-gray-800/30 border border-gray-700 rounded-xl p-6">
               <div className="text-xs font-bold text-gray-500 mb-2">ENTERPRISE</div>
               <h4 className="text-xl font-bold text-white mb-2">Enterprise</h4>
-              <div className="text-3xl font-bold text-white mb-4">$199<span className="text-sm text-gray-400">/mo</span></div>
+              <div className="text-3xl font-bold text-white mb-4">$119<span className="text-sm text-gray-400">/mo</span></div>
               <ul className="space-y-2 mb-6">
                 <li className="flex items-center gap-2 text-sm text-gray-300">
                   <span className="text-green-400">✓</span>
